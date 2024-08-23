@@ -1,10 +1,5 @@
 Tool to manipulate Hard links between the source directory and the destination directory.
 
-
-BE CAREFUL WITH THIS VERSION, it default to a FULL synchronisation which will delete any difference between source and destination.
-
-(I am trying to make an updated version wich require an option but is not working on my test workstation, probably because I am forced to use a newer version of Delphi)
-
 The only useful option is /SPACE to 
 	keep history of every version of a game published while using as little space as possible.
 	keep in synch multiple copy of the same game: I usually have
@@ -19,13 +14,13 @@ The only useful option is /SPACE to
 				the primary unmodified version synchronized with the steam download.
 				all other versions synchronized from the previous one and "SynchroLinked" again.
 
-All other options where for specific cases except maybe "none" to initialize a new copy of an existing reference.
+All other options where for specific cases except maybe /FULL to initialize a new copy of an existing reference.
 
 SynchroLink Source Destination /SPACE 
 	will recursively replace any identical file present in both source and destination by a hard link, 
 	saving the space needed for the second copy of the file.
 
-SynchroLink Source Destination
+SynchroLink Source Destination /FULL
 	will
 		recursively delete any file in destination not in source
 		recursively create hard links in destination of every file in source.

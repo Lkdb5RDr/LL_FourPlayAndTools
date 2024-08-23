@@ -23,7 +23,6 @@ Procedure FindCloseW(hFindStream: THandle); stdcall; external 'Kernel32.dll' nam
 var
   lastParam: integer;
   mode: Integer;
-    // 0: Normal: Full hardlinks of every file in source to destination (with or without purge)
     // 1: Redo: First, check destination for files in source. If they are not hardlinks of the same file, delete them.
     // 2: Space: First check destination for files in source. If they are not hardlinks of the same file but their content
     //      is identical delete them.
@@ -33,7 +32,9 @@ var
   reference: String;
     //  If source and destination are not on the same disk, use reference as an earlier backup of source on the same drive
     //    as destination.
-
+    // 7: Full: Full hardlinks of every file in source to destination (with or without purge)
+	//
+	// a mode is now required to avoid the accidents that hapened when the default was /FULL :)
 function SizeOfFile(name: string): UInt64;
 var
   F: file;
@@ -182,6 +183,11 @@ begin
     end;
 end;
 
+var
+  HardLinkCount : integer = 0;
+  loops         : integer = 0;
+  maxLoops      : integer = 1000;
+
 procedure LinkDirIn(s: string; d: string; l: string = ''; x: string = '');
 var
   R: TSearchRec;
@@ -208,20 +214,37 @@ begin
                      IsSameContent(PWideChar(s + l + R.Name), PWideChar(f)) then
                 if not DeleteFile(f) then
                   WriteLN('Error deleting duplicate ' + f)
-                else
-                  CreateHardLink(PWideChar(f), PWideChar(s + l + R.Name), nil);
+                else begin
+                  loops := 0;
+                  while FileExists(f) and (loops < maxLoops) do Sleep(100);
+
+                  if CreateHardLink(PWideChar(f), PWideChar(s + l + R.Name), nil) then
+                    Inc(HardLinkCount)
+                  else begin
+                    var ee : string := IntToStr(GetLastError);
+                    WriteLN('Error creating hardlink ' + f + ' error : ' + ee);
+                  end;
+
+                end;
           end else if (mode in [6]) then begin  // checks link
             if FileExists(f) then
               if IsSameLink(PWideChar(s + l + R.Name), PWideChar(f)) then
                 WriteLN('Is linked to ' + f);
           end else begin
-            if FileExists(f) and (Mode in [0]) then
+            if FileExists(f) and (Mode in [7]) then
                 DeleteFile(f);
             if not FileExists(f) then
-              if x = '' then
-                CreateHardLink(PWideChar(f), PWideChar(s + l + R.Name), nil)
-              else if FileExists(ExpandFileName(x + l + R.Name)) then
-                CreateHardLink(PWideChar(f), PWideChar(x + l + R.Name), nil);
+              if x = '' then begin
+                CreateHardLink(PWideChar(f), PWideChar(s + l + R.Name), nil);
+                Inc(HardLinkCount);
+              end else if FileExists(ExpandFileName(x + l + R.Name)) then begin
+                if CreateHardLink(PWideChar(f), PWideChar(x + l + R.Name), nil) then
+                  Inc(HardLinkCount)
+                else begin
+                  var ee : string := IntToStr(GetLastError);
+                  WriteLN('Error creating hardlink ' + x + l + R.Name + ' error : ' + ee);
+                end;
+              end;
           end;
         except
         end;
@@ -254,6 +277,10 @@ begin
         RemoveAllExtra(ParamStr(1), ParamStr(2));
         Inc(LastParam);
       end;
+      if (ParamCount > (2+LastParam)) and (SameText(ParamStr(3+LastParam), '/FULL')) then begin
+        Mode := 7;
+        Inc(LastParam);
+      end;
       if (ParamCount > (2+LastParam)) and (SameText(ParamStr(3+LastParam), '/SPACE')) then begin
         Mode := 2;
         Inc(LastParam);
@@ -279,8 +306,9 @@ begin
           Inc(LastParam);
         end;
       end;
-      LinkDirIn(ParamStr(1), ParamStr(2), '', reference);
+      if Mode <> 0 then LinkDirIn(ParamStr(1), ParamStr(2), '', reference);
     end;
+    Writeln(IntToStr(HardLinkCount), ' hard links created.');
   except
     on E: Exception do
       Writeln(E.ClassName, ': ', E.Message);
