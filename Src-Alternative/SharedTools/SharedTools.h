@@ -325,14 +325,18 @@ class ScriptLocals_ST;
 class ScriptLineBuffer_ST;
 class ScriptBuffer_ST;
 #define COMMAND_ARGS_ST			ObScriptParam_ST * paramInfo, void * scriptData, TESObjectREFR * thisObj, TESObjectREFR * containingObj, Script_ST * scriptObj, ScriptLocals_ST * locals, double * result, UInt32 * opcodeOffsetPtr
-#define COMMAND_ARGS_EVAL_ST	TESObjectREFR * thisObj, void * arg1, void * arg2, double * result
+#define COMMAND_ARGS_EVAL_ST	TESObjectREFR * thisObj, void * arg1, void * arg2, double * result, void * arg3
 #define PASS_COMMAND_ARGS_ST	paramInfo, scriptData, thisObj, containingObj, scriptObj, locals, result, opcodeOffsetPtr
-#define PASS_COMMAND_EVAL_ST	thisObj, arg1, arg2, result
+#define PASS_COMMAND_EVAL_ST	thisObj, arg1, arg2, result, arg3
+#define EXTRACT_ARGS_ST			paramInfo, scriptData, opcodeOffsetPtr, thisObj, containingObj, scriptObj, locals
 
 typedef bool (*ObScript_Eval_ST)(COMMAND_ARGS_EVAL_ST);
 typedef bool (*ObScript_Execute_ST)(COMMAND_ARGS_ST);
 typedef bool (*ObScript_Parse_ST)(UInt32 numParams, ObScriptParam_ST* paramInfo, ScriptLineBuffer_ST* lineBuf, ScriptBuffer_ST* scriptBuf);
-typedef bool (*_ExtractArgs_ST)(ObScriptParam_ST* paramInfo, void* scriptData, UInt32* opcodeOffsetPtr, TESObjectREFR* arg3, TESObjectREFR* thisObj, Script_ST* script, ScriptLocals_ST* eventList, ...);
+
+typedef bool (*_ExtractArgs_ST)(ObScriptParam_ST* paramInfo, void* scriptData, UInt32* opcodeOffsetPtr, TESObjectREFR* thisObj, TESObjectREFR* containingObj, Script_ST* script, ScriptLocals_ST* locals, ...);
+RelocAddr <_ExtractArgs_ST> ExtractArgs_ST(k_Cmd_Default_Parse);
+
 
 // 50
 struct ObScriptCommand_ST

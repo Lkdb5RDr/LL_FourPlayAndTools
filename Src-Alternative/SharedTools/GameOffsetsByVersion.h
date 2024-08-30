@@ -101,6 +101,9 @@
 
 #define k_SettingT_INISettingCollection_ST_Changed	0x01C91E10	// 1C91CF0	// 1C91CF0 
 
+#define k_Cmd_Default_Parse							0x004E7E00
+#define k_ExtractArgs								0x004E37D0
+
 #elif (CURRENT_RELEASE_RUNTIME == RUNTIME_VERSION_1_10_980)	// last was v48
 
 #error This version is no longer supported
@@ -191,6 +194,9 @@
 
 #define k_SettingT_INISettingCollection_ST_Changed	0x016849E0	// 1C91E10	// 1C91CF0	// 1C91CF0 
 
+#define k_Cmd_Default_Parse							0x005621A0
+#define k_ExtractArgs								0x00545200
+
 #elif (CURRENT_RELEASE_RUNTIME == RUNTIME_VERSION_1_10_984)	// currently v53
 
 #define k_hackArrayAdd 							0x01FEBB3D	// 1FEB41D	// 2775A34	// 2775914	// 279A9E4
@@ -278,6 +284,9 @@
 #define k_TESActorBaseData_ST_ModifyFlag			0x002B5F10	//			// 02B5EE0 
 
 #define k_SettingT_INISettingCollection_ST_Changed	0x01684DB0	// 16849E0	// 1C91E10	// 1C91CF0	// 1C91CF0 
+
+#define k_Cmd_Default_Parse							0x005621D0
+#define k_ExtractArgs								0x0055F350
 
 #else
 #error This version is not yet supported

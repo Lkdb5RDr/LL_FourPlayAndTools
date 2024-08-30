@@ -372,17 +372,8 @@ void SetMaxArraySize(UInt32 newMaxArraySize)
 
 void GameplayPatches(void)
 {
-	/**** bypass child test on kill ****/
-
-	UInt32 kk = 0;					// Defaults to not active
-
-	if (GetCustomConfigOption_UInt32(pluginCustomIni, "general", "KK", &kk) && kk)
-	{
-		// ignored
-	}
-
 	UInt32 maxArraySize = 0; // greater than 128 and up to $FFFFFFFF in theory (but don't, seriously). 0 means no change from vanilla
-	if(maxArraySize = GetMaxArraySize())
+	if (maxArraySize = GetMaxArraySize())
 		SetMaxArraySize(maxArraySize);
 }
 
@@ -390,7 +381,7 @@ bool SetMinimalMaxArraySize_internal(UInt32 newMaxArrraySize)
 {
 	bool result = true;
 	UInt32 maxArraySize = 0; // greater than 128 and up to $FFFFFFFF in theory (but don't, seriously). 0 means no change from vanilla
-	if(maxArraySize = GetMaxArraySize())
+	if (maxArraySize = GetMaxArraySize())
 		if (maxArraySize > newMaxArrraySize)
 		{
 			newMaxArrraySize = maxArraySize;
@@ -2446,7 +2437,9 @@ BSFixedString GetDisplayName(TESObjectREFR *ref)
 static BGSKeyword* AAF_GenderOverride_Female	= nullptr;
 static BGSKeyword* AAF_GenderOverride_Male		= nullptr;
 
-bool AAF_GetGender_internal(Actor* targetActor)
+static bool s_OverrideGender					= false;
+
+SInt32 AAF_GetGender_internal(Actor* targetActor)
 {
 
 	SInt32 gender;
@@ -2472,7 +2465,7 @@ bool AAF_GetGender_internal(Actor* targetActor)
 	return gender;
 }
 
-bool AAF_GetGender(StaticFunctionTag* base, Actor* targetActor)
+SInt32 AAF_GetGender(StaticFunctionTag* base, Actor* targetActor)
 {
 	return AAF_GetGender_internal(targetActor);
 }
@@ -2824,6 +2817,17 @@ VMArray<Actor*> AAF_PerformActorScan(StaticFunctionTag* base, TESObjectREFR *ref
 	return result;
 }
 
+bool AAF_OverrideGetIsSex(StaticFunctionTag* base, bool doOverride)
+{
+	if (doOverride && !s_OverrideGender)
+		s_OverrideGender = true;
+	else
+	if (!doOverride && s_OverrideGender)
+		s_OverrideGender = false;
+
+	return s_OverrideGender;
+}
+
 bool RegisterFuncs(VirtualMachine* vm)
 {
 	_MESSAGE("RegisterFuncs");
@@ -3029,7 +3033,7 @@ bool RegisterFuncs(VirtualMachine* vm)
 	vm->RegisterFunction(
 		new NativeFunction2<StaticFunctionTag, VMArray<Actor *>, TESObjectREFR *, float>("AAF_PerformActorScan", pluginName, AAF_PerformActorScan, vm));
 	vm->RegisterFunction(
-		new NativeFunction1<StaticFunctionTag, bool, Actor* >("AAF_GetGender", pluginName, AAF_GetGender, vm));
+		new NativeFunction1<StaticFunctionTag, SInt32, Actor* >("AAF_GetGender", pluginName, AAF_GetGender, vm));
 	vm->RegisterFunction(
 		new NativeFunction3<StaticFunctionTag, VMArray<VMVariable>, Actor*, bool, VMArray<BGSKeyword*> >("AAF_MakeActorData", pluginName, AAF_MakeActorData, vm));
 	vm->RegisterFunction(
@@ -3047,7 +3051,183 @@ bool RegisterFuncs(VirtualMachine* vm)
 	vm->RegisterFunction(
 		new NativeFunction1<StaticFunctionTag, bool, Actor *>("AAF_GetBlockedStatus", pluginName, AAF_GetBlockedStatus, vm));
 
+	vm->RegisterFunction(
+		new NativeFunction1<StaticFunctionTag, bool, bool>("AAF_OverrideGetIsSex", pluginName, AAF_OverrideGetIsSex, vm));
+
 	return true;
+}
+
+// Implement an alternative to GetIsSex/GetPCIsSex that checks also for AAF_GenderOverride
+
+static ObScriptCommand_ST* s_CommandGetIsSex				= nullptr;
+static ObScriptCommand_ST* s_CommandSameSex					= nullptr;
+static ObScriptCommand_ST* s_CommandSameSexAsPC				= nullptr;
+
+static BGSKeyword* s_GenderOverrideFemale					= nullptr;
+static BGSKeyword* s_GenderOverrideMale						= nullptr;
+
+static ObScript_Execute_ST* s_OriginalGetIsSex_Execute		= nullptr;
+static ObScript_Execute_ST* s_OriginalSameSex_Execute		= nullptr;
+static ObScript_Execute_ST* s_OriginalSameSexAsPC_Execute	= nullptr;
+
+static ObScript_Eval_ST* s_OriginalGetIsSex_Eval			= nullptr;
+static ObScript_Eval_ST* s_OriginalSameSex_Eval				= nullptr;
+static ObScript_Eval_ST* s_OriginalSameSexAsPC_Eval			= nullptr;
+
+bool Hooks_ObScript_Init()
+{
+	for (ObScriptCommand* iter = g_firstConsoleCommand; iter->opcode < (kObScript_NumConsoleCommands + kObScript_ConsoleOpBase); ++iter)
+	{
+		if (!strcmp(iter->longName, "GetIsSex"))
+		{
+			s_CommandGetIsSex = ObScriptCommand_ST::FromObScriptCommand(iter);
+		}
+		if (!strcmp(iter->longName, "SameSex"))
+		{
+			s_CommandSameSex = ObScriptCommand_ST::FromObScriptCommand(iter);
+		}
+		if (!strcmp(iter->longName, "SameSexAsPC"))
+		{
+			s_CommandSameSexAsPC = ObScriptCommand_ST::FromObScriptCommand(iter);
+		}
+		if (s_CommandGetIsSex && s_CommandSameSex && s_CommandSameSexAsPC)
+			break;
+	}
+
+	if (!s_CommandGetIsSex)
+	{
+		_ERROR("couldn't find obscript command GetIsSex");
+		return false;
+	}
+	if (!s_CommandSameSex)
+	{
+		_ERROR("couldn't find obscript command SameSex");
+		return false;
+	}
+	if (!s_CommandSameSexAsPC)
+	{
+		_ERROR("couldn't find obscript command SameSexAsPC");
+		return false;
+	}
+	return true;
+}
+
+bool DoGetIsSex_Eval(COMMAND_ARGS_EVAL_ST)
+{
+	if (!s_OverrideGender)
+		return (*s_OriginalGetIsSex_Eval)(PASS_COMMAND_EVAL_ST);
+	else
+	{
+		Actor* akActor = (Actor*)thisObj;
+		UInt8 isFemale = *(UInt8*)arg1;
+		bool gender = AAF_GetGender_internal(akActor);
+		if (isFemale)
+			*result = gender == 1 ? 1.0 : 0.0;
+		else
+			*result = gender == 0 ? 1.0 : 0.0;
+	}
+	return true;
+}
+
+bool DoGetIsSex_Execute(COMMAND_ARGS_ST)
+{
+	if (!s_OverrideGender)
+		return (*s_OriginalGetIsSex_Execute)(PASS_COMMAND_ARGS_ST);
+	else
+	{
+		bool isFemale = false;
+		void * arg1 = nullptr;
+		void * arg2 = nullptr;
+		void * arg3 = nullptr;
+		if (ExtractArgs_ST(EXTRACT_ARGS_ST, &isFemale))
+		{
+			arg1 = (void*)&isFemale;
+			return DoGetIsSex_Eval(PASS_COMMAND_EVAL_ST);
+		}
+	}
+	return false;
+}
+
+bool DoSameSex_Eval(COMMAND_ARGS_EVAL_ST)
+{
+	if (!s_OverrideGender)
+		return (*s_OriginalSameSex_Eval)(PASS_COMMAND_EVAL_ST);
+	else
+	{
+		TESObjectREFR* akPlayer = (TESObjectREFR*)(*g_player);
+		return DoSameSex_Eval(akPlayer, arg1, arg2, result, arg3);
+	}
+	return true;
+}
+
+bool DoSameSex_Execute(COMMAND_ARGS_ST)
+{
+	if (!s_OverrideGender)
+		return (*s_OriginalSameSex_Execute)(PASS_COMMAND_ARGS_ST);
+	else
+	{
+		void* arg1 = nullptr;
+		void* arg2 = nullptr;
+		void* arg3 = nullptr;
+		if (ExtractArgs_ST(EXTRACT_ARGS_ST, &arg1))
+			return DoSameSex_Eval(PASS_COMMAND_EVAL_ST);
+	}
+	return -1;
+}
+
+bool DoSameSexAsPC_Eval(COMMAND_ARGS_EVAL_ST)
+{
+	if (!s_OverrideGender)
+		return (*s_OriginalSameSexAsPC_Eval)(PASS_COMMAND_EVAL_ST);
+	else
+	{
+		TESObjectREFR* akPlayer = (TESObjectREFR*)(*g_player);
+		return DoSameSex_Eval(thisObj, akPlayer, arg2, result, arg3);
+	}
+	return true;
+}
+
+bool DoSameSexAsPC_Execute(COMMAND_ARGS_ST)
+{
+	if (!s_OverrideGender)
+		return (*s_OriginalSameSexAsPC_Execute)(PASS_COMMAND_ARGS_ST);
+	else
+	{
+		void* arg1 = nullptr;
+		void* arg2 = nullptr;
+		void* arg3 = nullptr;
+		arg1 = (Actor*)GetFormFromPlugin(NULL, "fallout4.esm", 0x000014);
+		return DoSameSex_Eval(PASS_COMMAND_EVAL_ST);
+	}
+	return -1;
+}
+
+void Hooks_ObScript_Commit()
+{
+	ObScriptCommand_ST cmd = *s_CommandGetIsSex;
+	s_OriginalGetIsSex_Execute = &cmd.execute;
+	s_OriginalGetIsSex_Eval = &cmd.eval;
+	cmd.execute = DoGetIsSex_Execute;
+	cmd.eval = DoGetIsSex_Eval;
+
+	SafeWriteBuf((uintptr_t)s_CommandGetIsSex, &cmd, sizeof(cmd));
+
+	cmd = *s_CommandSameSex;
+	s_OriginalSameSex_Execute = &cmd.execute;
+	s_OriginalSameSex_Eval = &cmd.eval;
+	cmd.execute = DoSameSex_Execute;
+	cmd.eval = DoSameSex_Eval;
+
+	SafeWriteBuf((uintptr_t)s_CommandSameSex, &cmd, sizeof(cmd));
+
+	cmd = *s_CommandSameSexAsPC;
+	s_OriginalSameSexAsPC_Execute = &cmd.execute;
+	s_OriginalSameSexAsPC_Eval = &cmd.eval;
+	cmd.execute = DoSameSexAsPC_Execute;
+	cmd.eval = DoSameSexAsPC_Eval;
+
+	SafeWriteBuf((uintptr_t)s_CommandSameSexAsPC, &cmd, sizeof(cmd));
+
 }
 
 class Scaleform_SetCustomConfigOption : public GFxFunctionHandler
@@ -3325,6 +3505,10 @@ bool F4SEPlugin_Load(const F4SEInterface * f4se)
 		return false;
 
 	_MESSAGE("%s loading...", pluginName);
+
+	// Hooks
+	Hooks_ObScript_Init();
+	Hooks_ObScript_Commit();
 
 	// apply patches to the game here
 	strcpy_s(pluginCustomIni, pluginName);
