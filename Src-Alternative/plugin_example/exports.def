@@ -1,0 +1,4 @@
+LIBRARY	"plugin_example"
+EXPORTS
+F4SEPlugin_Query
+F4SEPlugin_Load
