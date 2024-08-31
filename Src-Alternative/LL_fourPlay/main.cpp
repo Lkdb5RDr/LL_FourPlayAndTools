@@ -2661,7 +2661,7 @@ VMVariable AAF_GetLocationData(StaticFunctionTag* base, UInt32 scanLocation, VMA
 		// quickScan means return a single random reference for API calls, vs all valid locations for the GUI scan
 		if (quickScan && result.Length())
 		{
-			int idx = get_random_int(0, result.Length());
+			int idx = get_random_int(0, result.Length() - 1);
 			result.Get(&tmpVar, idx);
 			result.Clear();
 			result.Push(&tmpVar);
