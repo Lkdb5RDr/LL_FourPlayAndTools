@@ -2442,6 +2442,7 @@ static bool s_OverrideGender					= false;
 bool AAF_GetGender_internal(Actor* targetActor)
 {
 
+	_DMESSAGE("AAF_GetGender_internal asked on %02x", targetActor);
 	bool gender = false;
 	TESNPC* targetBase;
 
@@ -2819,12 +2820,14 @@ VMArray<Actor*> AAF_PerformActorScan(StaticFunctionTag* base, TESObjectREFR *ref
 
 bool AAF_OverrideGetIsSex(StaticFunctionTag* base, bool doOverride)
 {
+	_DMESSAGE("AAF_OverrideGetIsSex asking for %02x and it was %02x.", doOverride, s_OverrideGender);
 	if (doOverride && !s_OverrideGender)
 		s_OverrideGender = true;
 	else
 	if (!doOverride && s_OverrideGender)
 		s_OverrideGender = false;
 
+	_DMESSAGE("AAF_OverrideGetIsSex asked  for %02x and is now %02x.", doOverride, s_OverrideGender);
 	return s_OverrideGender;
 }
 
@@ -3035,8 +3038,6 @@ bool RegisterFuncs(VirtualMachine* vm)
 	vm->RegisterFunction(
 		new NativeFunction1<StaticFunctionTag, bool, Actor* >("AAF_GetGender", pluginName, AAF_GetGender, vm));
 	vm->RegisterFunction(
-		new NativeFunction1<StaticFunctionTag, bool, bool >("AAF_OverrideGetIsSex", pluginName, AAF_OverrideGetIsSex, vm));
-	vm->RegisterFunction(
 		new NativeFunction3<StaticFunctionTag, VMArray<VMVariable>, Actor*, bool, VMArray<BGSKeyword*> >("AAF_MakeActorData", pluginName, AAF_MakeActorData, vm));
 	vm->RegisterFunction(
 		new NativeFunction2<StaticFunctionTag, bool, TESObjectREFR*, VMArray<VMVariable>>("AAF_IsValidLocation", pluginName, AAF_IsValidLocation, vm));
@@ -3068,17 +3069,17 @@ static ObScriptCommand_ST* s_CommandSameSexAsPC				= nullptr;
 static BGSKeyword* s_GenderOverrideFemale					= nullptr;
 static BGSKeyword* s_GenderOverrideMale						= nullptr;
 
-static ObScript_Execute_ST* s_OriginalGetIsSex_Execute		= nullptr;
-static ObScript_Execute_ST* s_OriginalSameSex_Execute		= nullptr;
-static ObScript_Execute_ST* s_OriginalSameSexAsPC_Execute	= nullptr;
+static ObScript_Execute_ST s_OriginalGetIsSex_Execute		= nullptr;
+static ObScript_Execute_ST s_OriginalSameSex_Execute		= nullptr;
+static ObScript_Execute_ST s_OriginalSameSexAsPC_Execute	= nullptr;
 
-static ObScript_Eval_ST* s_OriginalGetIsSex_Eval			= nullptr;
-static ObScript_Eval_ST* s_OriginalSameSex_Eval				= nullptr;
-static ObScript_Eval_ST* s_OriginalSameSexAsPC_Eval			= nullptr;
+static ObScript_Eval_ST s_OriginalGetIsSex_Eval				= nullptr;
+static ObScript_Eval_ST s_OriginalSameSex_Eval				= nullptr;
+static ObScript_Eval_ST s_OriginalSameSexAsPC_Eval			= nullptr;
 
 bool Hooks_ObScript_Init()
 {
-	for (ObScriptCommand* iter = g_firstConsoleCommand; iter->opcode < (kObScript_NumConsoleCommands + kObScript_ConsoleOpBase); ++iter)
+	for (ObScriptCommand* iter = g_firstObScriptCommand; iter->opcode < (kObScript_NumObScriptCommands + kObScript_ScriptOpBase); ++iter)
 	{
 		if (!strcmp(iter->longName, "GetIsSex"))
 		{
@@ -3120,8 +3121,10 @@ bool DoGetIsSex_Eval(COMMAND_ARGS_EVAL_ST)
 		return (*s_OriginalGetIsSex_Eval)(PASS_COMMAND_EVAL_ST);
 	else
 	{
+		_DMESSAGE("DoGetIsSex_Eval on Actor %016x with arg1 as %016x.", (Actor*)thisObj, arg1);
 		Actor* akActor = (Actor*)thisObj;
-		UInt8 isFemale = *(UInt8*)arg1;
+		UInt8 isFemale = (UInt8)arg1;
+		_DMESSAGE("DoGetIsSex_Eval on Actor %016x with isFemale==%02x.", (Actor*)thisObj, isFemale);
 		bool gender = AAF_GetGender_internal(akActor);
 		if (isFemale)
 			*result = gender == 1 ? 1.0 : 0.0;
@@ -3137,14 +3140,21 @@ bool DoGetIsSex_Execute(COMMAND_ARGS_ST)
 		return (*s_OriginalGetIsSex_Execute)(PASS_COMMAND_ARGS_ST);
 	else
 	{
+		_DMESSAGE("DoGetIsSex_Execute on Actor %016x.", (Actor*)thisObj);
 		bool isFemale = false;
 		void * arg1 = nullptr;
 		void * arg2 = nullptr;
 		void * arg3 = nullptr;
 		if (ExtractArgs_ST(EXTRACT_ARGS_ST, &isFemale))
 		{
+			_DMESSAGE("DoGetIsSex_Execute on Actor %016x with isFemale==%02x.", (Actor*)thisObj, isFemale);
 			arg1 = (void*)&isFemale;
 			return DoGetIsSex_Eval(PASS_COMMAND_EVAL_ST);
+		}
+		else
+		{
+			_DMESSAGE("DoGetIsSex_Execute on Actor %016x failed to extract args!", (Actor*)thisObj);
+			return (*s_OriginalGetIsSex_Execute)(PASS_COMMAND_ARGS_ST);	// if we return false, the game will voluntary crash.
 		}
 	}
 	return false;
@@ -3156,8 +3166,11 @@ bool DoSameSex_Eval(COMMAND_ARGS_EVAL_ST)
 		return (*s_OriginalSameSex_Eval)(PASS_COMMAND_EVAL_ST);
 	else
 	{
-		TESObjectREFR* akPlayer = (TESObjectREFR*)(*g_player);
-		return DoSameSex_Eval(akPlayer, arg1, arg2, result, arg3);
+		Actor* akActor = (Actor*)thisObj;
+		bool gender = AAF_GetGender_internal(akActor);
+		Actor* akTarget = (Actor*)arg1;
+		bool genderTarget = AAF_GetGender_internal(akTarget);
+			*result = gender == genderTarget;
 	}
 	return true;
 }
@@ -3174,7 +3187,7 @@ bool DoSameSex_Execute(COMMAND_ARGS_ST)
 		if (ExtractArgs_ST(EXTRACT_ARGS_ST, &arg1))
 			return DoSameSex_Eval(PASS_COMMAND_EVAL_ST);
 	}
-	return -1;
+	return false;
 }
 
 bool DoSameSexAsPC_Eval(COMMAND_ARGS_EVAL_ST)
@@ -3186,7 +3199,6 @@ bool DoSameSexAsPC_Eval(COMMAND_ARGS_EVAL_ST)
 		TESObjectREFR* akPlayer = (TESObjectREFR*)(*g_player);
 		return DoSameSex_Eval(thisObj, akPlayer, arg2, result, arg3);
 	}
-	return true;
 }
 
 bool DoSameSexAsPC_Execute(COMMAND_ARGS_ST)
@@ -3201,30 +3213,31 @@ bool DoSameSexAsPC_Execute(COMMAND_ARGS_ST)
 		arg1 = (Actor*)GetFormFromPlugin(NULL, "fallout4.esm", 0x000014);
 		return DoSameSex_Eval(PASS_COMMAND_EVAL_ST);
 	}
-	return -1;
 }
 
 void Hooks_ObScript_Commit()
 {
 	ObScriptCommand_ST cmd = *s_CommandGetIsSex;
-	s_OriginalGetIsSex_Execute = &cmd.execute;
-	s_OriginalGetIsSex_Eval = &cmd.eval;
+	s_OriginalGetIsSex_Execute = cmd.execute;
+	s_OriginalGetIsSex_Eval = cmd.eval;
 	cmd.execute = DoGetIsSex_Execute;
+	// _DMESSAGE("Original cmd_Eval for GetIsSex is %016x for %016x.", cmd.eval, s_OriginalGetIsSex_Execute);
 	cmd.eval = DoGetIsSex_Eval;
+	// _DMESSAGE("Changed  cmd_Eval for GetIsSex is %016x for %016x.", cmd.eval, DoGetIsSex_Eval);
 
 	SafeWriteBuf((uintptr_t)s_CommandGetIsSex, &cmd, sizeof(cmd));
 
 	cmd = *s_CommandSameSex;
-	s_OriginalSameSex_Execute = &cmd.execute;
-	s_OriginalSameSex_Eval = &cmd.eval;
+	s_OriginalSameSex_Execute = cmd.execute;
+	s_OriginalSameSex_Eval = cmd.eval;
 	cmd.execute = DoSameSex_Execute;
 	cmd.eval = DoSameSex_Eval;
 
 	SafeWriteBuf((uintptr_t)s_CommandSameSex, &cmd, sizeof(cmd));
 
 	cmd = *s_CommandSameSexAsPC;
-	s_OriginalSameSexAsPC_Execute = &cmd.execute;
-	s_OriginalSameSexAsPC_Eval = &cmd.eval;
+	s_OriginalSameSexAsPC_Execute = cmd.execute;
+	s_OriginalSameSexAsPC_Eval = cmd.eval;
 	cmd.execute = DoSameSexAsPC_Execute;
 	cmd.eval = DoSameSexAsPC_Eval;
 

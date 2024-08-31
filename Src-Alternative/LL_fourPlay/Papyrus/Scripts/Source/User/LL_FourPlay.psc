@@ -378,7 +378,7 @@ Actor[] Function AAF_PerformActorScan(ObjectReference akRef, float radius) nativ
 ; Return the actor gender as seen by AAF
 Bool Function AAF_GetGender(Actor targetActor) native global
 
-; Return the actor gender as seen by AAF
+; Enable or disable overriding GetIsSex, SameSex and SameSexAsPC to report AAF_OverrideGender status on NPC.
 Bool Function AAF_OverrideGetIsSex(Bool doActivate) native global
 
 ; Collects statistics on an actor for use by the Scaleform
