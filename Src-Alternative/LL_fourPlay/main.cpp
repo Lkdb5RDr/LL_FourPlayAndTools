@@ -2439,10 +2439,10 @@ static BGSKeyword* AAF_GenderOverride_Male		= nullptr;
 
 static bool s_OverrideGender					= false;
 
-SInt32 AAF_GetGender_internal(Actor* targetActor)
+bool AAF_GetGender_internal(Actor* targetActor)
 {
 
-	SInt32 gender;
+	bool gender = false;
 	TESNPC* targetBase;
 
 	targetBase = (TESNPC*)Runtime_DynamicCast(targetActor->baseForm, RTTI_TESForm, RTTI_TESNPC);
@@ -2465,7 +2465,7 @@ SInt32 AAF_GetGender_internal(Actor* targetActor)
 	return gender;
 }
 
-SInt32 AAF_GetGender(StaticFunctionTag* base, Actor* targetActor)
+bool AAF_GetGender(StaticFunctionTag* base, Actor* targetActor)
 {
 	return AAF_GetGender_internal(targetActor);
 }
@@ -2473,7 +2473,7 @@ SInt32 AAF_GetGender(StaticFunctionTag* base, Actor* targetActor)
 VMArray<VMVariable> AAF_MakeActorData(StaticFunctionTag *base, Actor *targetActor, bool includeDistance, VMArray<BGSKeyword *>conditionKeywords)
 {
 	VMArray<VMVariable> resultData;
-	SInt32 gender;
+	bool gender;
 	float distance = 0.0;
 	VMArray<VMVariable> keywordResults;
 	VMArray<VMVariable> attractionProfile;
@@ -3033,7 +3033,9 @@ bool RegisterFuncs(VirtualMachine* vm)
 	vm->RegisterFunction(
 		new NativeFunction2<StaticFunctionTag, VMArray<Actor *>, TESObjectREFR *, float>("AAF_PerformActorScan", pluginName, AAF_PerformActorScan, vm));
 	vm->RegisterFunction(
-		new NativeFunction1<StaticFunctionTag, SInt32, Actor* >("AAF_GetGender", pluginName, AAF_GetGender, vm));
+		new NativeFunction1<StaticFunctionTag, bool, Actor* >("AAF_GetGender", pluginName, AAF_GetGender, vm));
+	vm->RegisterFunction(
+		new NativeFunction1<StaticFunctionTag, bool, bool >("AAF_OverrideGetIsSex", pluginName, AAF_OverrideGetIsSex, vm));
 	vm->RegisterFunction(
 		new NativeFunction3<StaticFunctionTag, VMArray<VMVariable>, Actor*, bool, VMArray<BGSKeyword*> >("AAF_MakeActorData", pluginName, AAF_MakeActorData, vm));
 	vm->RegisterFunction(
