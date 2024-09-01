@@ -2442,7 +2442,7 @@ static bool s_OverrideGender					= false;
 bool AAF_GetGender_internal(Actor* targetActor)
 {
 
-	_DMESSAGE("AAF_GetGender_internal asked on %02x", targetActor);
+	_DMESSAGE("AAF_GetGender_internal called on %016X", targetActor);
 	bool gender = false;
 	TESNPC* targetBase;
 
@@ -2463,12 +2463,20 @@ bool AAF_GetGender_internal(Actor* targetActor)
 				gender = CALL_MEMBER_FN(targetBase, GetSex)();
 	}
 
+	_DMESSAGE("AAF_GetGender_internal called on %016X with result=%x", targetActor, gender);
 	return gender;
 }
 
 bool AAF_GetGender(StaticFunctionTag* base, Actor* targetActor)
 {
-	return AAF_GetGender_internal(targetActor);
+	bool gender = AAF_GetGender_internal(targetActor);
+
+	char text[] = "AAF_GetGender -> %d";
+	char buffer[1000];
+	sprintf_s(buffer, text, gender);	// I am so bad at handling strings in C++ :(
+	PrintConsole(nullptr, buffer);
+
+	return gender;
 }
 
 VMArray<VMVariable> AAF_MakeActorData(StaticFunctionTag *base, Actor *targetActor, bool includeDistance, VMArray<BGSKeyword *>conditionKeywords)
@@ -2655,7 +2663,7 @@ VMVariable AAF_GetLocationData(StaticFunctionTag* base, UInt32 scanLocation, VMA
 		// quickScan means return a single random reference for API calls, vs all valid locations for the GUI scan
 		if (quickScan && result.Length())
 		{
-			int idx = get_random_int(0, result.Length());
+			int idx = get_random_int(0, result.Length() - 1);
 			result.Get(&tmpVar, idx);
 			result.Clear();
 			result.Push(&tmpVar);
@@ -3121,15 +3129,31 @@ bool DoGetIsSex_Eval(COMMAND_ARGS_EVAL_ST)
 		return (*s_OriginalGetIsSex_Eval)(PASS_COMMAND_EVAL_ST);
 	else
 	{
-		_DMESSAGE("DoGetIsSex_Eval on Actor %016x with arg1 as %016x.", (Actor*)thisObj, arg1);
-		Actor* akActor = (Actor*)thisObj;
-		UInt8 isFemale = (UInt8)arg1;
-		_DMESSAGE("DoGetIsSex_Eval on Actor %016x with isFemale==%02x.", (Actor*)thisObj, isFemale);
-		bool gender = AAF_GetGender_internal(akActor);
-		if (isFemale)
-			*result = gender == 1 ? 1.0 : 0.0;
+		UInt8 isFemale = 0;
+		bool gender = false;
+		_DMESSAGE("DoGetIsSex_Eval on Object %016X with arg1 as %016X.", (Actor*)thisObj, arg1);
+		Actor* akActor = (Actor*)DYNAMIC_CAST(thisObj, TESObjectREFR, Actor);
+		if (akActor)
+		{
+			isFemale = (UInt8)arg1;
+			_DMESSAGE("DoGetIsSex_Eval on Actor ID %08X with isFemale==%02x.", akActor->formID, isFemale);
+			gender = AAF_GetGender_internal(akActor);
+			if (isFemale)
+				*result = gender == 1 ? 1.0 : 0.0;
+			else
+				*result = gender == 0 ? 1.0 : 0.0;
+
+			char text[] = "GetIsSex %d -> %f";
+			char buffer[1000];
+			sprintf_s(buffer, text, isFemale, *result);
+			PrintConsole(nullptr, buffer);
+			_DMESSAGE("DoGetIsSex_Eval on Actor ID %08X with isFemale==%d, gender=%d = %f.", akActor->formID, isFemale, gender, *result);
+		}
 		else
-			*result = gender == 0 ? 1.0 : 0.0;
+		{
+			*result = 0;
+			_DMESSAGE("DoGetIsSex_Eval%016X is not an Actor [%f].", thisObj, *result);
+		}
 	}
 	return true;
 }
@@ -3140,22 +3164,22 @@ bool DoGetIsSex_Execute(COMMAND_ARGS_ST)
 		return (*s_OriginalGetIsSex_Execute)(PASS_COMMAND_ARGS_ST);
 	else
 	{
-		_DMESSAGE("DoGetIsSex_Execute on Actor %016x.", (Actor*)thisObj);
+		_DMESSAGE("DoGetIsSex_Execute on Object %016X.", thisObj);
 		bool isFemale = false;
-		void * arg1 = nullptr;
-		void * arg2 = nullptr;
-		void * arg3 = nullptr;
-		if (ExtractArgs_ST(EXTRACT_ARGS_ST, &isFemale))
+		//if (ExtractArgs_ST(EXTRACT_ARGS_ST, &isFemale))
 		{
-			_DMESSAGE("DoGetIsSex_Execute on Actor %016x with isFemale==%02x.", (Actor*)thisObj, isFemale);
-			arg1 = (void*)&isFemale;
+			_DMESSAGE("DoGetIsSex_Execute on Actor %016X with isFemale==%02x.", thisObj, isFemale);
+			void * arg1 = nullptr;
+			void * arg2 = nullptr;
+			void * arg3 = nullptr;
+			arg1 = (void*)isFemale;
 			return DoGetIsSex_Eval(PASS_COMMAND_EVAL_ST);
 		}
-		else
-		{
-			_DMESSAGE("DoGetIsSex_Execute on Actor %016x failed to extract args!", (Actor*)thisObj);
-			return (*s_OriginalGetIsSex_Execute)(PASS_COMMAND_ARGS_ST);	// if we return false, the game will voluntary crash.
-		}
+		//else
+		//{
+		//	_DMESSAGE("DoGetIsSex_Execute on Object %016X failed to extract args!", thisObj);
+		//	return (*s_OriginalGetIsSex_Execute)(PASS_COMMAND_ARGS_ST);	// if we return false, the game will voluntary crash.
+		//}
 	}
 	return false;
 }
@@ -3221,9 +3245,9 @@ void Hooks_ObScript_Commit()
 	s_OriginalGetIsSex_Execute = cmd.execute;
 	s_OriginalGetIsSex_Eval = cmd.eval;
 	cmd.execute = DoGetIsSex_Execute;
-	// _DMESSAGE("Original cmd_Eval for GetIsSex is %016x for %016x.", cmd.eval, s_OriginalGetIsSex_Execute);
+	// _DMESSAGE("Original cmd_Eval for GetIsSex is %016X for %016X.", cmd.eval, s_OriginalGetIsSex_Execute);
 	cmd.eval = DoGetIsSex_Eval;
-	// _DMESSAGE("Changed  cmd_Eval for GetIsSex is %016x for %016x.", cmd.eval, DoGetIsSex_Eval);
+	// _DMESSAGE("Changed  cmd_Eval for GetIsSex is %016X for %016X.", cmd.eval, DoGetIsSex_Eval);
 
 	SafeWriteBuf((uintptr_t)s_CommandGetIsSex, &cmd, sizeof(cmd));
 

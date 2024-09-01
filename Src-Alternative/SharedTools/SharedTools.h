@@ -333,9 +333,10 @@ class ScriptBuffer_ST;
 typedef bool (*ObScript_Eval_ST)(COMMAND_ARGS_EVAL_ST);
 typedef bool (*ObScript_Execute_ST)(COMMAND_ARGS_ST);
 typedef bool (*ObScript_Parse_ST)(UInt32 numParams, ObScriptParam_ST* paramInfo, ScriptLineBuffer_ST* lineBuf, ScriptBuffer_ST* scriptBuf);
+RelocAddr <ObScript_Parse_ST> Cmd_Default_Parse(k_Cmd_Default_Parse);
 
-typedef bool (*_ExtractArgs_ST)(ObScriptParam_ST* paramInfo, void* scriptData, UInt32* opcodeOffsetPtr, TESObjectREFR* thisObj, TESObjectREFR* containingObj, Script_ST* script, ScriptLocals_ST* locals, ...);
-RelocAddr <_ExtractArgs_ST> ExtractArgs_ST(k_Cmd_Default_Parse);
+typedef bool (*_ExtractArgs_ST)(ObScriptParam_ST* paramInfo, void* scriptData, UInt32* opcodeOffsetPtr, TESObjectREFR* thisObj, TESObjectREFR* containingObj, Script_ST* scriptObj, ScriptLocals_ST* locals, ...);
+RelocAddr <_ExtractArgs_ST> ExtractArgs_ST(k_ExtractArgs);
 
 
 // 50
