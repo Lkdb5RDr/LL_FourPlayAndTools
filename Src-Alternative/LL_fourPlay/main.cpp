@@ -3129,30 +3129,32 @@ bool DoGetIsSex_Eval(COMMAND_ARGS_EVAL_ST)
 		return (*s_OriginalGetIsSex_Eval)(PASS_COMMAND_EVAL_ST);
 	else
 	{
-		UInt8 isFemale = 0;
+		bool isFemale = false;
 		bool gender = false;
 		_DMESSAGE("DoGetIsSex_Eval on Object %016X with arg1 as %016X.", (Actor*)thisObj, arg1);
 		Actor* akActor = (Actor*)DYNAMIC_CAST(thisObj, TESObjectREFR, Actor);
 		if (akActor)
 		{
-			isFemale = (UInt8)arg1;
+			isFemale = (bool)arg1;
 			_DMESSAGE("DoGetIsSex_Eval on Actor ID %08X with isFemale==%02x.", akActor->formID, isFemale);
+			gLog.Indent();
 			gender = AAF_GetGender_internal(akActor);
+			gLog.Outdent();
 			if (isFemale)
-				*result = gender == 1 ? 1.0 : 0.0;
+				result = gender == 1 ? 1.0 : 0.0;
 			else
-				*result = gender == 0 ? 1.0 : 0.0;
+				result = gender == 0 ? 1.0 : 0.0;
 
 			char text[] = "GetIsSex %d -> %f";
 			char buffer[1000];
-			sprintf_s(buffer, text, isFemale, *result);
+			sprintf_s(buffer, text, isFemale, result);
 			PrintConsole(nullptr, buffer);
-			_DMESSAGE("DoGetIsSex_Eval on Actor ID %08X with isFemale==%d, gender=%d = %f.", akActor->formID, isFemale, gender, *result);
+			_DMESSAGE("DoGetIsSex_Eval on Actor ID %08X with isFemale==%d, gender=%d = %f.", akActor->formID, isFemale, gender, result);
 		}
 		else
 		{
-			*result = 0;
-			_DMESSAGE("DoGetIsSex_Eval%016X is not an Actor [%f].", thisObj, *result);
+			result = 0;
+			_DMESSAGE("DoGetIsSex_Eval%016X is not an Actor [%f].", thisObj, result);
 		}
 	}
 	return true;
@@ -3164,22 +3166,36 @@ bool DoGetIsSex_Execute(COMMAND_ARGS_ST)
 		return (*s_OriginalGetIsSex_Execute)(PASS_COMMAND_ARGS_ST);
 	else
 	{
-		_DMESSAGE("DoGetIsSex_Execute on Object %016X.", thisObj);
 		bool isFemale = false;
-		//if (ExtractArgs_ST(EXTRACT_ARGS_ST, &isFemale))
+		void* args1 = nullptr;
+		void* args2 = nullptr;
+		_DMESSAGE("DoGetIsSex_Execute on Object %016X.", thisObj);
+
+		// Hack to replace ExtractArgs as we know there is one mandatory integer like UInt8 parameter !!!
+		UInt8* data = (UInt8*)scriptData;
+		UInt8* offset = data + opcodeOffsetPtr;
+
+		_DMESSAGE("Data=%X Offset=%X Val=%X.", data, offset, *offset);
+
+		if (true)	//	(ExtractArgs_ST(PASS_EXTRACT_ARGS_ARGS_ST))
 		{
-			_DMESSAGE("DoGetIsSex_Execute on Actor %016X with isFemale==%02x.", thisObj, isFemale);
-			void * arg1 = nullptr;
-			void * arg2 = nullptr;
-			void * arg3 = nullptr;
-			arg1 = (void*)isFemale;
-			return DoGetIsSex_Eval(PASS_COMMAND_EVAL_ST);
+			isFemale = (bool) *offset;
+			void* arg1 = (void*)isFemale;
+			void* arg2 = nullptr;
+			void* arg3 = nullptr;
+			bool returnValue = true;
+			_DMESSAGE("DoGetIsSex_Execute on Actor %016X with isFemale==%d.", thisObj, isFemale);
+			gLog.Indent();
+			returnValue = DoGetIsSex_Eval(PASS_COMMAND_EVAL_ST);
+			gLog.Outdent();
+			_DMESSAGE("DoGetIsSex_Execute on Actor %016X with isFemale==%d result=%f.", thisObj, isFemale, result);
+			return returnValue;
 		}
-		//else
-		//{
-		//	_DMESSAGE("DoGetIsSex_Execute on Object %016X failed to extract args!", thisObj);
-		//	return (*s_OriginalGetIsSex_Execute)(PASS_COMMAND_ARGS_ST);	// if we return false, the game will voluntary crash.
-		//}
+		else
+		{
+			_DMESSAGE("DoGetIsSex_Execute on Object %016X failed to extract args!", thisObj);
+			return (*s_OriginalGetIsSex_Execute)(PASS_COMMAND_ARGS_ST);	// if we return false, the game will voluntary crash.
+		}
 	}
 	return false;
 }
@@ -3190,12 +3206,30 @@ bool DoSameSex_Eval(COMMAND_ARGS_EVAL_ST)
 		return (*s_OriginalSameSex_Eval)(PASS_COMMAND_EVAL_ST);
 	else
 	{
-		Actor* akActor = (Actor*)thisObj;
-		bool gender = AAF_GetGender_internal(akActor);
-		Actor* akTarget = (Actor*)arg1;
-		bool genderTarget = AAF_GetGender_internal(akTarget);
-			*result = gender == genderTarget;
+		UInt8 isFemale = 0;
+		bool gender = false;
+		_DMESSAGE("DoSameSex_Eval on Object %016X with arg1 as %016X.", (Actor*)thisObj, arg1);
+		Actor* akActor = (Actor*)DYNAMIC_CAST(thisObj, TESObjectREFR, Actor);
+		if (akActor)
+		{
+			gender = AAF_GetGender_internal(akActor);
+			Actor* akTarget = (Actor*)DYNAMIC_CAST(arg1, TESObjectREFR, Actor);
+			if (akTarget)
+			{
+				bool genderTarget = AAF_GetGender_internal(akTarget);
+				result = gender == genderTarget;
+
+				char text[] = "SameSex %d -> %f";
+				char buffer[1000];
+				sprintf_s(buffer, text, isFemale, result);
+				PrintConsole(nullptr, buffer);
+				_DMESSAGE("DoSameSex_Eval on Actor ID %08X with isFemale==%d, gender=%d = %f.", akActor->formID, isFemale, gender, result);
+				return true;
+			}
+		}
 	}
+	result = 0;
+	_DMESSAGE("DoSameSex_Eval %016X or %016X are not both Actors [%f].", thisObj, arg1, result);
 	return true;
 }
 
@@ -3205,11 +3239,15 @@ bool DoSameSex_Execute(COMMAND_ARGS_ST)
 		return (*s_OriginalSameSex_Execute)(PASS_COMMAND_ARGS_ST);
 	else
 	{
-		void* arg1 = nullptr;
-		void* arg2 = nullptr;
-		void* arg3 = nullptr;
-		if (ExtractArgs_ST(EXTRACT_ARGS_ST, &arg1))
+		void* args1 = nullptr;
+		void* args2 = nullptr;
+		if (ExtractArgs_ST(PASS_EXTRACT_ARGS_ARGS_ST))
+		{
+			void* arg1 = args1;
+			void* arg2 = nullptr;
+			void* arg3 = nullptr;
 			return DoSameSex_Eval(PASS_COMMAND_EVAL_ST);
+		}
 	}
 	return false;
 }
@@ -3231,10 +3269,9 @@ bool DoSameSexAsPC_Execute(COMMAND_ARGS_ST)
 		return (*s_OriginalSameSexAsPC_Execute)(PASS_COMMAND_ARGS_ST);
 	else
 	{
-		void* arg1 = nullptr;
+		void* arg1 = (void*)(*g_player);
 		void* arg2 = nullptr;
 		void* arg3 = nullptr;
-		arg1 = (Actor*)GetFormFromPlugin(NULL, "fallout4.esm", 0x000014);
 		return DoSameSex_Eval(PASS_COMMAND_EVAL_ST);
 	}
 }
