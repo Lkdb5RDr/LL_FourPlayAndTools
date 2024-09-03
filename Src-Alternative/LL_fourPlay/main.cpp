@@ -3125,37 +3125,45 @@ bool Hooks_ObScript_Init()
 
 bool DoGetIsSex_Eval(COMMAND_ARGS_EVAL_ST)
 {
+	/* looking at crash : this is being called repeatably with the same impossible parameters (even when override is not active)*/
 	if (!s_OverrideGender)
 		return (*s_OriginalGetIsSex_Eval)(PASS_COMMAND_EVAL_ST);
 	else
 	{
 		bool isFemale = false;
 		bool gender = false;
-		_DMESSAGE("DoGetIsSex_Eval on Object %016X with arg1 as %016X.", (Actor*)thisObj, arg1);
-		Actor* akActor = (Actor*)DYNAMIC_CAST(thisObj, TESObjectREFR, Actor);
-		if (akActor)
-		{
-			isFemale = (bool)arg1;
-			_DMESSAGE("DoGetIsSex_Eval on Actor ID %08X with isFemale==%02x.", akActor->formID, isFemale);
-			gLog.Indent();
-			gender = AAF_GetGender_internal(akActor);
-			gLog.Outdent();
-			if (isFemale)
-				result = gender == 1 ? 1.0 : 0.0;
-			else
-				result = gender == 0 ? 1.0 : 0.0;
+		_DMESSAGE("DoGetIsSex_Eval on Object %016X with arg1 as %016X.", thisObj, arg1);
 
-			char text[] = "GetIsSex %d -> %f";
-			char buffer[1000];
-			sprintf_s(buffer, text, isFemale, result);
-			PrintConsole(nullptr, buffer);
-			_DMESSAGE("DoGetIsSex_Eval on Actor ID %08X with isFemale==%d, gender=%d = %f.", akActor->formID, isFemale, gender, result);
+		/* looking at crash : this is being called with impossible parameters */
+		if (thisObj && thisObj->formType == kFormType_REFR)
+		{
+			Actor* akActor = (Actor*)DYNAMIC_CAST(thisObj, TESObjectREFR, Actor);
+			if (akActor)
+			{
+				isFemale = (bool)arg1;
+				_DMESSAGE("DoGetIsSex_Eval on Actor ID %08X with isFemale==%02x.", akActor->formID, isFemale);
+				gLog.Indent();
+				gender = AAF_GetGender_internal(akActor);
+				gLog.Outdent();
+				if (isFemale)
+					result = gender == 1 ? 1.0 : 0.0;
+				else
+					result = gender == 0 ? 1.0 : 0.0;
+
+				char text[] = "GetIsSex %d -> %f";
+				char buffer[1000];
+				sprintf_s(buffer, text, isFemale, result);
+				PrintConsole(nullptr, buffer);
+				_DMESSAGE("DoGetIsSex_Eval on Actor ID %08X with isFemale==%d, gender=%d = %f.", akActor->formID, isFemale, gender, result);
+			}
+			else
+			{
+				result = 0;
+				_DMESSAGE("DoGetIsSex_Eval %016X is not an Actor [%f].", thisObj, result);
+			}
 		}
 		else
-		{
-			result = 0;
-			_DMESSAGE("DoGetIsSex_Eval%016X is not an Actor [%f].", thisObj, result);
-		}
+			_DMESSAGE("DoGetIsSex_Eval %016X [%08X] is not a reference [%f].", thisObj, thisObj->formID, result);
 	}
 	return true;
 }
@@ -3173,7 +3181,7 @@ bool DoGetIsSex_Execute(COMMAND_ARGS_ST)
 
 		// Hack to replace ExtractArgs as we know there is one mandatory integer like UInt8 parameter !!!
 		UInt8* data = (UInt8*)scriptData;
-		UInt8* offset = data + opcodeOffsetPtr;
+		UInt8* offset = data + opcodeOffsetPtr + 2;
 
 		_DMESSAGE("Data=%X Offset=%X Val=%X.", data, offset, *offset);
 
@@ -3208,7 +3216,7 @@ bool DoSameSex_Eval(COMMAND_ARGS_EVAL_ST)
 	{
 		UInt8 isFemale = 0;
 		bool gender = false;
-		_DMESSAGE("DoSameSex_Eval on Object %016X with arg1 as %016X.", (Actor*)thisObj, arg1);
+		_DMESSAGE("DoSameSex_Eval on Object %016X with arg1 as %016X.", thisObj, arg1);
 		Actor* akActor = (Actor*)DYNAMIC_CAST(thisObj, TESObjectREFR, Actor);
 		if (akActor)
 		{
@@ -3241,12 +3249,27 @@ bool DoSameSex_Execute(COMMAND_ARGS_ST)
 	{
 		void* args1 = nullptr;
 		void* args2 = nullptr;
-		if (ExtractArgs_ST(PASS_EXTRACT_ARGS_ARGS_ST))
+
+		_DMESSAGE("DoSameSex_Execute on Object %016X.", thisObj);
+
+		// I need to remember how to get a ref directly from *data like it was done in NVSE and earlier games.
+		
+		//UInt8* data = (UInt8*)scriptData;
+		//Actor* offset = (Actor* )(data + opcodeOffsetPtr + 2);
+
+		if (false)	// (ExtractArgs_ST(PASS_EXTRACT_ARGS_ARGS_ST))
 		{
-			void* arg1 = args1;
+			//_DMESSAGE("Data=%X Offset=%X Val=%X.", data, offset, offset->formID);
+
+			void* arg1 = nullptr;
 			void* arg2 = nullptr;
 			void* arg3 = nullptr;
 			return DoSameSex_Eval(PASS_COMMAND_EVAL_ST);
+		}
+		else
+		{
+			_DMESSAGE("DoSameSex_Execute on Object %016X failed to extract args!", thisObj);
+			return (*s_OriginalSameSex_Execute)(PASS_COMMAND_ARGS_ST);	// if we return false, the game will voluntary crash.
 		}
 	}
 	return false;
@@ -3291,7 +3314,7 @@ void Hooks_ObScript_Commit()
 	cmd = *s_CommandSameSex;
 	s_OriginalSameSex_Execute = cmd.execute;
 	s_OriginalSameSex_Eval = cmd.eval;
-	cmd.execute = DoSameSex_Execute;
+	// cmd.execute = DoSameSex_Execute; Hack not working. Commenting this blocks the the override in Console In script calling AAF_GetGender is preferable anyway.
 	cmd.eval = DoSameSex_Eval;
 
 	SafeWriteBuf((uintptr_t)s_CommandSameSex, &cmd, sizeof(cmd));
