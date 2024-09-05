@@ -333,12 +333,28 @@ class ScriptLocals_ST;
 class ScriptLineBuffer_ST;
 class ScriptBuffer_ST;
 
+struct	FirstParamOf_Eval {
+	TESObjectREFR* thisObj;
+	UInt64			unk010;
+	UInt64			unk018;
+	UInt64			unk020;
+	UInt64			unk028;
+	UInt64			unk030;
+	UInt64			unk038;
+	UInt64			unk040;
+	UInt64			unk048;
+	UInt64			unk050;
+	UInt64			unk058;
+	UInt32			unk060;
+	UInt8			unk064;
+};
+
 #define COMMAND_ARGS_ST				ObScriptParam_ST * paramInfo, ScriptData_ST * scriptData, TESObjectREFR * thisObj, TESObjectREFR * containingObj, Script_ST * scriptObj, ScriptLocals_ST * locals, double& result, UInt32& opcodeOffsetPtr
-#define COMMAND_ARGS_EVAL_ST		TESObjectREFR * thisObj, void * arg1, void * arg2, double& result, void * arg3
+#define COMMAND_ARGS_EVAL_ST		FirstParamOf_Eval& fpoe, void * arg1, void * arg2, double& result, void * arg3
 #define COMMAND_ARGS_PARSE_ST		UInt32 numParams, const ObScriptParam_ST* paramInfo, ScriptLineBuffer_ST* lineBuf, ScriptBuffer_ST* scriptBuf
 #define EXTRACT_ARGS_ARGS_ST		const ObScriptParam_ST* paramInfo, ScriptData_ST* scriptData, UInt32& opcodeOffsetPtr, TESObjectREFR* thisObj, TESObjectREFR* containingObj, Script_ST* scriptObj, ScriptLocals_ST* locals, void* args1, void* args2
 #define PASS_COMMAND_ARGS_ST		paramInfo, scriptData, thisObj, containingObj, scriptObj, locals, result, opcodeOffsetPtr
-#define PASS_COMMAND_EVAL_ST		thisObj, arg1, arg2, result, arg3
+#define PASS_COMMAND_EVAL_ST		fpoe, arg1, arg2, result, arg3
 #define PASS_COMMAND_PARSE_ST		numParams, paramInfo, lineBuf, scriptBuf
 #define PASS_EXTRACT_ARGS_ARGS_ST	paramInfo, scriptData, opcodeOffsetPtr, thisObj, containingObj, scriptObj, locals, args1, args2
 
