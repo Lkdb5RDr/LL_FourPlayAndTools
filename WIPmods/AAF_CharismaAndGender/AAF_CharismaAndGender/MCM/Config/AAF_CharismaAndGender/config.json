@@ -1,0 +1,42 @@
+{
+	"modName": "AAF_CharismaAndGender",
+	"displayName": "$AAFCG_TITLE",
+	"minMcmVersion": 3,
+	"pluginRequirements": ["AAF_CharismaAndGender.esp"],
+	"content": [
+
+		{ "type": "spacer" },
+			
+		{
+		  "text": "<font size=\"48\"><p align = \"center\">$AAFCG_TITLE</p></font>",
+		  "type": "text",
+		  "html": true
+		},
+		
+		{ "type": "spacer" },
+		
+		{
+		  "text": "<font size=\"24\"><p align = \"center\">v 2.0</p></font>",
+		  "type": "text",
+		  "html": true
+		}
+	],
+	"pages": 
+	[
+		{
+			"pageDisplayName": "$TS_MAIN",
+			"content": 
+			[
+				{
+					"id": "fAAFCG_ActivateOverrideGetIsSex:Global",
+					"text": "$AAFCG_ACTIVE",
+					"type": "switcher",
+					"help": "$AAFCG_ACTIVE_HELP",
+					"valueOptions": {
+						"sourceType": "ModSettingFloat"
+					}
+				}
+			]
+		}
+	]
+}
