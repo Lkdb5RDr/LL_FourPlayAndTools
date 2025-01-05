@@ -3315,16 +3315,18 @@ bool F4SEPlugin_Query(const F4SEInterface * f4se, PluginInfo * info)
 	// ### only fill out PluginInfo and return true/false
 
 	// supported runtime version
-	_MESSAGE("%s query successful.", pluginName);
+	_MESSAGE("%s query successful as %d.", pluginName, g_pluginHandle);
 	return true;
 }
 
 bool F4SEPlugin_Load(const F4SEInterface * f4se)
 {
-	if ((g_pluginHandle != kPluginHandle_Invalid) || !F4SEPlugin_Query(f4se, NULL))
-		return false;
-
 	_MESSAGE("%s loading...", pluginName);
+	if (g_pluginHandle == kPluginHandle_Invalid)
+		if (!F4SEPlugin_Query(f4se, NULL))
+			return false;
+
+	_MESSAGE("%s loading as %d...", pluginName, g_pluginHandle);
 
 	// apply patches to the game here
 	strcpy_s(pluginCustomIni, pluginName);
