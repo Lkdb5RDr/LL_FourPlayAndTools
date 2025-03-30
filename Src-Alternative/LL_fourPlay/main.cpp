@@ -2336,7 +2336,7 @@ float get_random_float(float min, float max)
 {
 	std::random_device rd;
 	static std::mt19937 e(rd());
-	static std::uniform_real_distribution<float> dis(min, max);
+	std::uniform_real_distribution<float> dis(min, max);
 	return dis(e);
 }
 
@@ -2344,7 +2344,7 @@ int get_random_int(int min, int max)
 {
 	std::random_device rd;
 	static std::mt19937 e(rd());
-	static std::uniform_int_distribution<int> dis(min, max);
+	std::uniform_int_distribution<int> dis(min, max);
 	return dis(e);
 }
 
