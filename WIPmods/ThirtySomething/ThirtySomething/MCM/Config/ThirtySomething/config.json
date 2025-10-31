@@ -1,0 +1,71 @@
+{
+	"modName": "ThirtySomething",
+	"displayName": "30 Something",
+	"minMcmVersion": 3,
+	"pluginRequirements": ["ThirtySomething.esp"],
+	"content": [
+
+		{ "type": "spacer" },
+			
+		{
+		  "text": "<font size=\"48\"><p align = \"center\">30 Something</p></font>",
+		  "type": "text",
+		  "html": true
+		},
+		
+		{ "type": "spacer" },
+		
+		{
+		  "text": "<font size=\"24\"><p align = \"center\">v 1.0</p></font>",
+		  "type": "text",
+		  "html": true
+		}
+	],
+	"pages": 
+	[
+		{
+			"pageDisplayName": "$TS_MAIN",
+			"content": 
+			[
+				{
+					"id": "thirtySomethingActiveStatus:Global",
+					"text": "$TS_ACTIVE",
+					"type": "switcher",
+					"help": "$TS_ACTIVE_HELP",
+					"valueOptions": {
+						"sourceType": "GlobalValue",
+						"sourceForm": "ThirtySomething.esp|000802"
+					}
+				},
+				{ "type": "spacer" },
+				{
+					"id": "thirtySomethingTargetLevel:Global",
+					"text": "$TS_PREGAME_LEVEL",
+					"type": "slider",
+					"help": "$TS_PREGAME_LEVEL_HELP",
+					"valueOptions": {
+						"min": 1,
+						"max": 250,
+						"step": 1,
+						"sourceType": "GlobalValue",
+						"sourceForm": "ThirtySomething.esp|000804"
+					}
+				},
+				{ "type": "spacer" },
+				{
+					"id": "thirtySomethingAddExperience:Global",
+					"text": "$TS_PREGAME_EXPERIENCE",
+					"type": "slider",
+					"help": "$TS_PREGAME_EXPERIENCE_HELP",
+					"valueOptions": {
+						"min": 0,
+						"max": 250,
+						"step": 1,
+						"sourceType": "GlobalValue",
+						"sourceForm": "ThirtySomething.esp|000801"
+					}
+				}
+			]
+		}
+	]
+}
