@@ -4,7 +4,7 @@ Scriptname LL_FourPlay Native Hidden
 ;	Shared community library of utility function from LoverLab distributed with FourPlay resources as a F4SE plugin with sources included
 ;
 
-;	Version 53 for runtime 1.10.984	2024 09 01 by jaam and Chosen Clue and EgoBallistic and Fedim
+;	Version 52 for runtime 1.10.984	2024 08 19 by jaam and Chosen Clue and EgoBallistic and Fedim
 
 ;	Runtime version: This file should be runtime neutral. The accompanying F4SE plugin (ll_fourplay_1_10_984.dll) is NOT!
 ;		You need to always use a plugin corresponding with the game version you play.
@@ -17,7 +17,7 @@ Scriptname LL_FourPlay Native Hidden
 
 ; Returns the version of this script (when someone has not forgotten to update it :) )
 Float Function GetLLFPScriptVersion() global
-	return 53.0
+	return 52.0
 endFunction
 
 ; Returns the version of the plugin and servers to verify it is properly installed.
@@ -377,9 +377,6 @@ Actor[] Function AAF_PerformActorScan(ObjectReference akRef, float radius) nativ
 
 ; Return the actor gender as seen by AAF
 Bool Function AAF_GetGender(Actor targetActor) native global
-
-; Enable or disable overriding GetIsSex, SameSex and SameSexAsPC to report AAF_OverrideGender status on NPC.
-Bool Function AAF_OverrideGetIsSex(Bool doActivate) native global
 
 ; Collects statistics on an actor for use by the Scaleform
 Var[] Function AAF_MakeActorData(Actor targetActor, Bool includeDistance, Keyword[] conditionKeywords) native global

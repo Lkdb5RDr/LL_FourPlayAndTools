@@ -3066,8 +3066,9 @@ bool RegisterFuncs(VirtualMachine* vm)
 	vm->RegisterFunction(
 		new NativeFunction1<StaticFunctionTag, bool, Actor *>("AAF_GetBlockedStatus", pluginName, AAF_GetBlockedStatus, vm));
 
-	vm->RegisterFunction(
-		new NativeFunction1<StaticFunctionTag, bool, bool>("AAF_OverrideGetIsSex", pluginName, AAF_OverrideGetIsSex, vm));
+	// Not ready for production, see new project LL_FourPlay_exp
+	//vm->RegisterFunction(
+	//	new NativeFunction1<StaticFunctionTag, bool, bool>("AAF_OverrideGetIsSex", pluginName, AAF_OverrideGetIsSex, vm));
 
 	return true;
 }
@@ -3288,7 +3289,7 @@ bool DoSameSex_Execute(COMMAND_ARGS_ST)
 		//UInt8* data = (UInt8*)scriptData;
 		//Actor* offset = (Actor* )(data + opcodeOffsetPtr + 2);
 
-		if (false)	// (ExtractArgs_ST(PASS_EXTRACT_ARGS_ARGS_ST))
+		if (ExtractArgs_ST(PASS_EXTRACT_ARGS_ARGS_ST))
 		{
 			//_DMESSAGE("Data=%X Offset=%X Val=%X.", data, offset, offset->formID);
 
@@ -3643,8 +3644,8 @@ bool F4SEPlugin_Load(const F4SEInterface * f4se)
 	_MESSAGE("%s loading as %d...", pluginName, g_pluginHandle);
 
 	// Hooks
-	Hooks_ObScript_Init();
-	Hooks_ObScript_Commit();
+	//Hooks_ObScript_Init();
+	//Hooks_ObScript_Commit();
 
 	// apply patches to the game here
 	strcpy_s(pluginCustomIni, pluginName);
