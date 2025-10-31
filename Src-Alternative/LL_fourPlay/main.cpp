@@ -75,6 +75,8 @@ void OpenPluginLog()
 	gLog.OpenRelative(CSIDL_MYDOCUMENTS, pluginLog);
 #ifdef _DEBUG
 	gLog.SetLogLevel(IDebugLog::kLevel_DebugMessage);
+#else
+	gLog.SetLogLevel(IDebugLog::kLevel_Message);
 #endif
 }
 
@@ -372,17 +374,8 @@ void SetMaxArraySize(UInt32 newMaxArraySize)
 
 void GameplayPatches(void)
 {
-	/**** bypass child test on kill ****/
-
-	UInt32 kk = 0;					// Defaults to not active
-
-	if (GetCustomConfigOption_UInt32(pluginCustomIni, "general", "KK", &kk) && kk)
-	{
-		// ignored
-	}
-
 	UInt32 maxArraySize = 0; // greater than 128 and up to $FFFFFFFF in theory (but don't, seriously). 0 means no change from vanilla
-	if(maxArraySize = GetMaxArraySize())
+	if (maxArraySize = GetMaxArraySize())
 		SetMaxArraySize(maxArraySize);
 }
 
@@ -390,7 +383,7 @@ bool SetMinimalMaxArraySize_internal(UInt32 newMaxArrraySize)
 {
 	bool result = true;
 	UInt32 maxArraySize = 0; // greater than 128 and up to $FFFFFFFF in theory (but don't, seriously). 0 means no change from vanilla
-	if(maxArraySize = GetMaxArraySize())
+	if (maxArraySize = GetMaxArraySize())
 		if (maxArraySize > newMaxArrraySize)
 		{
 			newMaxArrraySize = maxArraySize;
@@ -2446,10 +2439,13 @@ BSFixedString GetDisplayName(TESObjectREFR *ref)
 static BGSKeyword* AAF_GenderOverride_Female	= nullptr;
 static BGSKeyword* AAF_GenderOverride_Male		= nullptr;
 
+static bool s_OverrideGender					= false;
+
 bool AAF_GetGender_internal(Actor* targetActor)
 {
 
-	SInt32 gender;
+	_DMESSAGE("AAF_GetGender_internal called on %016X", targetActor);
+	bool gender = false;
 	TESNPC* targetBase;
 
 	targetBase = (TESNPC*)Runtime_DynamicCast(targetActor->baseForm, RTTI_TESForm, RTTI_TESNPC);
@@ -2469,18 +2465,28 @@ bool AAF_GetGender_internal(Actor* targetActor)
 				gender = CALL_MEMBER_FN(targetBase, GetSex)();
 	}
 
+	_DMESSAGE("AAF_GetGender_internal called on %016X with result=%x", targetActor, gender);
 	return gender;
 }
 
 bool AAF_GetGender(StaticFunctionTag* base, Actor* targetActor)
 {
-	return AAF_GetGender_internal(targetActor);
+	bool gender = AAF_GetGender_internal(targetActor);
+
+#ifdef _DEBUG
+	char text[] = "AAF_GetGender -> %d";
+	char buffer[1000];
+	sprintf_s(buffer, text, gender);	// I am so bad at handling strings in C++ :(
+	PrintConsole(nullptr, buffer);
+#endif
+
+	return gender;
 }
 
 VMArray<VMVariable> AAF_MakeActorData(StaticFunctionTag *base, Actor *targetActor, bool includeDistance, VMArray<BGSKeyword *>conditionKeywords)
 {
 	VMArray<VMVariable> resultData;
-	SInt32 gender;
+	bool gender;
 	float distance = 0.0;
 	VMArray<VMVariable> keywordResults;
 	VMArray<VMVariable> attractionProfile;
@@ -2824,6 +2830,19 @@ VMArray<Actor*> AAF_PerformActorScan(StaticFunctionTag* base, TESObjectREFR *ref
 	return result;
 }
 
+bool AAF_OverrideGetIsSex(StaticFunctionTag* base, bool doOverride)
+{
+	_DMESSAGE("AAF_OverrideGetIsSex asking for %02x and it was %02x.", doOverride, s_OverrideGender);
+	if (doOverride && !s_OverrideGender)
+		s_OverrideGender = true;
+	else
+	if (!doOverride && s_OverrideGender)
+		s_OverrideGender = false;
+
+	_DMESSAGE("AAF_OverrideGetIsSex asked  for %02x and is now %02x.", doOverride, s_OverrideGender);
+	return s_OverrideGender;
+}
+
 bool RegisterFuncs(VirtualMachine* vm)
 {
 	_MESSAGE("RegisterFuncs");
@@ -3047,7 +3066,303 @@ bool RegisterFuncs(VirtualMachine* vm)
 	vm->RegisterFunction(
 		new NativeFunction1<StaticFunctionTag, bool, Actor *>("AAF_GetBlockedStatus", pluginName, AAF_GetBlockedStatus, vm));
 
+	// Not ready for production, see new project LL_FourPlay_exp
+	//vm->RegisterFunction(
+	//	new NativeFunction1<StaticFunctionTag, bool, bool>("AAF_OverrideGetIsSex", pluginName, AAF_OverrideGetIsSex, vm));
+
 	return true;
+}
+
+// Implement an alternative to GetIsSex/GetPCIsSex that checks also for AAF_GenderOverride
+
+static ObScriptCommand_ST* s_CommandGetIsSex				= nullptr;
+static ObScriptCommand_ST* s_CommandSameSex					= nullptr;
+static ObScriptCommand_ST* s_CommandSameSexAsPC				= nullptr;
+
+static BGSKeyword* s_GenderOverrideFemale					= nullptr;
+static BGSKeyword* s_GenderOverrideMale						= nullptr;
+
+static ObScript_Execute_ST s_OriginalGetIsSex_Execute		= nullptr;
+static ObScript_Execute_ST s_OriginalSameSex_Execute		= nullptr;
+static ObScript_Execute_ST s_OriginalSameSexAsPC_Execute	= nullptr;
+
+static ObScript_Eval_ST s_OriginalGetIsSex_Eval				= nullptr;
+static ObScript_Eval_ST s_OriginalSameSex_Eval				= nullptr;
+static ObScript_Eval_ST s_OriginalSameSexAsPC_Eval			= nullptr;
+
+bool Hooks_ObScript_Init()
+{
+	for (ObScriptCommand* iter = g_firstObScriptCommand; iter->opcode < (kObScript_NumObScriptCommands + kObScript_ScriptOpBase); ++iter)
+	{
+		if (!strcmp(iter->longName, "GetIsSex"))
+		{
+			s_CommandGetIsSex = ObScriptCommand_ST::FromObScriptCommand(iter);
+		}
+		if (!strcmp(iter->longName, "SameSex"))
+		{
+			s_CommandSameSex = ObScriptCommand_ST::FromObScriptCommand(iter);
+		}
+		if (!strcmp(iter->longName, "SameSexAsPC"))
+		{
+			s_CommandSameSexAsPC = ObScriptCommand_ST::FromObScriptCommand(iter);
+		}
+		if (s_CommandGetIsSex && s_CommandSameSex && s_CommandSameSexAsPC)
+			break;
+	}
+
+	if (!s_CommandGetIsSex)
+	{
+		_ERROR("couldn't find obscript command GetIsSex");
+		return false;
+	}
+	if (!s_CommandSameSex)
+	{
+		_ERROR("couldn't find obscript command SameSex");
+		return false;
+	}
+	if (!s_CommandSameSexAsPC)
+	{
+		_ERROR("couldn't find obscript command SameSexAsPC");
+		return false;
+	}
+	return true;
+}
+
+bool DoGetIsSex_Eval(COMMAND_ARGS_EVAL_ST)
+{
+	/* looking at crash : this is being called repeatably with the same impossible parameters (even when override is not active)*/
+	/* Without this plugin there are repeated calls with thisObj pointig to the playerRef . With this plugin this thisObj points to rubbish and rvert back to pointing to the playerRef when entering s_OriginalGetIsSex_Eval */
+	/* I cannot figure if I am missing something huge of if the debugger showing me wrong data ??? */
+	/* call originating from DoGetIsSex_Execute are fine so the logic is ok. */
+
+	if (!s_OverrideGender)
+		return (*s_OriginalGetIsSex_Eval)(PASS_COMMAND_EVAL_ST);
+	else try
+	{
+		bool isFemale = false;
+		bool gender = false;
+		_DMESSAGE("DoGetIsSex_Eval on Object %08X with arg1 as %02X.", fpoe.thisObj, arg1);
+
+		/* Crash fixed so far: First parameter is a struct containing thisObj and no longer thisObj */
+							/* looking at crash : this is being called with impossible parameters */
+		/* if (fpoe.thisObj && (fpoe.thisObj->formType == kFormType_REFR || fpoe.thisObj->formType == kFormType_ACHR)) */
+		{
+			Actor* akActor = (Actor*)DYNAMIC_CAST(fpoe.thisObj, TESObjectREFR, Actor);
+			if (akActor)
+			{
+				isFemale = (bool)arg1;
+				_DMESSAGE("DoGetIsSex_Eval on Actor ID %08X with isFemale==%02x.", akActor->formID, isFemale);
+				gLog.Indent();
+				gender = AAF_GetGender_internal(akActor);
+				gLog.Outdent();
+				if (isFemale)
+					result = gender == 1 ? 1.0 : 0.0;
+				else
+					result = gender == 0 ? 1.0 : 0.0;
+
+				char text[] = "GetIsSex %d -> %f";
+				char buffer[1000];
+				sprintf_s(buffer, text, isFemale, result);
+				PrintConsole(nullptr, buffer);
+				_DMESSAGE("DoGetIsSex_Eval on Actor ID %08X with isFemale==%d, gender=%d = %f.", akActor->formID, isFemale, gender, result);
+			}
+			else
+			{
+				result = 0;
+				_DMESSAGE("DoGetIsSex_Eval %08X is not an Actor [%f].", fpoe.thisObj, result);
+				return (*s_OriginalGetIsSex_Eval)(PASS_COMMAND_EVAL_ST);
+			}
+		}
+		/* else
+		{
+			_DMESSAGE("DoGetIsSex_Eval %016X [%08X] is not a reference [%f].", fpoe.thisObj, fpoe.thisObj->formID, result);
+			return (*s_OriginalGetIsSex_Eval)(PASS_COMMAND_EVAL_ST);
+		} */
+	}
+	catch (std::exception& e)
+	{
+		_DMESSAGE("DoGetIsSex_Eval %016X [%08X] generate exception %s.", fpoe.thisObj, fpoe.thisObj->formID, e.what());
+		return (*s_OriginalGetIsSex_Eval)(PASS_COMMAND_EVAL_ST);
+	}
+	catch (int n)
+	{
+		_DMESSAGE("DoGetIsSex_Eval %016X [%08X] generate exception %#8.8x.", fpoe.thisObj, fpoe.thisObj->formID, (unsigned)n);
+		return (*s_OriginalGetIsSex_Eval)(PASS_COMMAND_EVAL_ST);
+	}
+	catch (...)
+	{
+		_DMESSAGE("DoGetIsSex_Eval %016X [%08X] generate unknown exception.", fpoe.thisObj, fpoe.thisObj->formID);
+		return (*s_OriginalGetIsSex_Eval)(PASS_COMMAND_EVAL_ST);
+	}
+	return true;
+}
+
+bool DoGetIsSex_Execute(COMMAND_ARGS_ST)
+{
+	if (!s_OverrideGender)
+		return (*s_OriginalGetIsSex_Execute)(PASS_COMMAND_ARGS_ST);
+	else
+	{
+		bool isFemale = false;
+		void* args1 = nullptr;
+		void* args2 = nullptr;
+		_DMESSAGE("DoGetIsSex_Execute on Object %016X.", thisObj);
+
+		// Hack to replace ExtractArgs as we know there is one mandatory integer like UInt8 parameter !!!
+		UInt8* data = (UInt8*)scriptData;
+		UInt8* offset = data + opcodeOffsetPtr + 2;
+
+		// _DMESSAGE("Data=%X Offset=%X Val=%X.", data, offset, *offset);
+
+		if (true)	//	(ExtractArgs_ST(PASS_EXTRACT_ARGS_ARGS_ST))
+		{
+			FirstParamOf_Eval fpoe;
+			fpoe.thisObj = thisObj;
+			isFemale = (bool)*offset;
+			void* arg1 = (void*)isFemale;
+			void* arg2 = nullptr;
+			void* arg3 = nullptr;
+			bool returnValue = true;
+			_DMESSAGE("DoGetIsSex_Execute on Actor %016X with isFemale==%d.", thisObj, isFemale);
+			gLog.Indent();
+			returnValue = DoGetIsSex_Eval(PASS_COMMAND_EVAL_ST);
+			gLog.Outdent();
+			_DMESSAGE("DoGetIsSex_Execute on Actor %016X with isFemale==%d result=%f.", thisObj, isFemale, result);
+			return returnValue;
+		}
+		else
+		{
+			_DMESSAGE("DoGetIsSex_Execute on Object %016X failed to extract args!", thisObj);
+			return (*s_OriginalGetIsSex_Execute)(PASS_COMMAND_ARGS_ST);	// if we return false, the game will voluntary crash.
+		}
+	}
+	return false;
+}
+
+bool DoSameSex_Eval(COMMAND_ARGS_EVAL_ST)
+{
+	if (!s_OverrideGender)
+		return (*s_OriginalSameSex_Eval)(PASS_COMMAND_EVAL_ST);
+	else
+	{
+		UInt8 isFemale = 0;
+		bool gender = false;
+		_DMESSAGE("DoSameSex_Eval on Object %016X with arg1 as %016X.", fpoe.thisObj, arg1);
+		Actor* akActor = (Actor*)DYNAMIC_CAST(fpoe.thisObj, TESObjectREFR, Actor);
+		if (akActor)
+		{
+			gender = AAF_GetGender_internal(akActor);
+			Actor* akTarget = (Actor*)DYNAMIC_CAST(arg1, TESObjectREFR, Actor);
+			if (akTarget)
+			{
+				bool genderTarget = AAF_GetGender_internal(akTarget);
+				result = gender == genderTarget;
+
+				char text[] = "SameSex %d -> %f";
+				char buffer[1000];
+				sprintf_s(buffer, text, isFemale, result);
+				PrintConsole(nullptr, buffer);
+				_DMESSAGE("DoSameSex_Eval on Actor ID %08X with isFemale==%d, gender=%d = %f.", akActor->formID, isFemale, gender, result);
+				return true;
+			}
+		}
+	}
+	result = 0;
+	_DMESSAGE("DoSameSex_Eval %016X or %016X are not both Actors [%f].", fpoe.thisObj, arg1, result);
+	return true;
+}
+
+/* Not overriden at this time */
+bool DoSameSex_Execute(COMMAND_ARGS_ST)
+{
+	if (!s_OverrideGender)
+		return (*s_OriginalSameSex_Execute)(PASS_COMMAND_ARGS_ST);
+	else
+	{
+		void* args1 = nullptr;
+		void* args2 = nullptr;
+
+		_DMESSAGE("DoSameSex_Execute on Object %016X.", thisObj);
+
+		// I need to remember how to get a ref directly from *data like it was done in NVSE and earlier games.
+		
+		//UInt8* data = (UInt8*)scriptData;
+		//Actor* offset = (Actor* )(data + opcodeOffsetPtr + 2);
+
+		if (ExtractArgs_ST(PASS_EXTRACT_ARGS_ARGS_ST))
+		{
+			//_DMESSAGE("Data=%X Offset=%X Val=%X.", data, offset, offset->formID);
+
+			FirstParamOf_Eval fpoe;
+			fpoe.thisObj = thisObj;
+			void* arg1 = nullptr;
+			void* arg2 = nullptr;
+			void* arg3 = nullptr;
+			return DoSameSex_Eval(PASS_COMMAND_EVAL_ST);
+		}
+		else
+		{
+			_DMESSAGE("DoSameSex_Execute on Object %016X failed to extract args!", thisObj);
+			return (*s_OriginalSameSex_Execute)(PASS_COMMAND_ARGS_ST);	// if we return false, the game will voluntary crash.
+		}
+	}
+	return false;
+}
+
+bool DoSameSexAsPC_Eval(COMMAND_ARGS_EVAL_ST)
+{
+	if (!s_OverrideGender)
+		return (*s_OriginalSameSexAsPC_Eval)(PASS_COMMAND_EVAL_ST);
+	else
+	{
+		TESObjectREFR* akPlayer = (TESObjectREFR*)(*g_player);
+		return DoSameSex_Eval(fpoe, akPlayer, arg2, result, arg3);
+	}
+}
+
+bool DoSameSexAsPC_Execute(COMMAND_ARGS_ST)
+{
+	if (!s_OverrideGender)
+		return (*s_OriginalSameSexAsPC_Execute)(PASS_COMMAND_ARGS_ST);
+	else
+	{
+		FirstParamOf_Eval fpoe;
+		fpoe.thisObj = thisObj;
+		void* arg1 = (void*)(*g_player);
+		void* arg2 = nullptr;
+		void* arg3 = nullptr;
+		return DoSameSex_Eval(PASS_COMMAND_EVAL_ST);
+	}
+}
+
+void Hooks_ObScript_Commit()
+{
+	ObScriptCommand_ST cmd = *s_CommandGetIsSex;
+	s_OriginalGetIsSex_Execute = cmd.execute;
+	s_OriginalGetIsSex_Eval = cmd.eval;
+	cmd.execute = DoGetIsSex_Execute;
+	// _DMESSAGE("Original cmd_Eval for GetIsSex is %016X for %016X.", cmd.eval, s_OriginalGetIsSex_Execute);
+	cmd.eval = DoGetIsSex_Eval;
+	// _DMESSAGE("Changed  cmd_Eval for GetIsSex is %016X for %016X.", cmd.eval, DoGetIsSex_Eval);
+
+	SafeWriteBuf((uintptr_t)s_CommandGetIsSex, &cmd, sizeof(cmd));
+
+	cmd = *s_CommandSameSex;
+	s_OriginalSameSex_Execute = cmd.execute;
+	s_OriginalSameSex_Eval = cmd.eval;
+	// cmd.execute = DoSameSex_Execute; Hack not working. Commenting this blocks the the override in Console In script calling AAF_GetGender is preferable anyway.
+	cmd.eval = DoSameSex_Eval;
+
+	SafeWriteBuf((uintptr_t)s_CommandSameSex, &cmd, sizeof(cmd));
+
+	cmd = *s_CommandSameSexAsPC;
+	s_OriginalSameSexAsPC_Execute = cmd.execute;
+	s_OriginalSameSexAsPC_Eval = cmd.eval;
+	cmd.execute = DoSameSexAsPC_Execute;
+	cmd.eval = DoSameSexAsPC_Eval;
+
+	SafeWriteBuf((uintptr_t)s_CommandSameSexAsPC, &cmd, sizeof(cmd));
+
 }
 
 class Scaleform_SetCustomConfigOption : public GFxFunctionHandler
@@ -3327,6 +3642,10 @@ bool F4SEPlugin_Load(const F4SEInterface * f4se)
 			return false;
 
 	_MESSAGE("%s loading as %d...", pluginName, g_pluginHandle);
+
+	// Hooks
+	//Hooks_ObScript_Init();
+	//Hooks_ObScript_Commit();
 
 	// apply patches to the game here
 	strcpy_s(pluginCustomIni, pluginName);
