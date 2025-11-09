@@ -75,7 +75,7 @@
     </Link>
     <PostBuildEvent>
       <Message>Installing DLL...</Message>
-      <Command>if not "$(Fallout4DPath)"=="" copy "$(TargetPath)" "$(Fallout4DPath)\Data\F4SE\Plugins\$(TargetFileName)"</Command>
+      <Command>if not "$(Fallout4PDPath)"=="" copy "$(TargetPath)" "$(Fallout4PDPath)\F4SE\Plugins\$(TargetFileName)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -105,7 +105,7 @@
     </Link>
     <PostBuildEvent>
       <Message>Installing DLL...</Message>
-      <Command>if not "$(Fallout4Path)"=="" copy "$(TargetPath)" "$(Fallout4Path)\Data\F4SE\Plugins\$(TargetFileName)"</Command>
+      <Command>if not "$(Fallout4PPath)"=="" copy "$(TargetPath)" "$(Fallout4PPath)\F4SE\Plugins\$(TargetFileName)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
