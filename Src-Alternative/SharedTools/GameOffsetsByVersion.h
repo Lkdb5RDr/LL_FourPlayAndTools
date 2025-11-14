@@ -343,8 +343,8 @@
 #define k_TESObjectREFR_SetScale					0x004FC630	// 04AB660	//			// 03F85B0	//	TESObjectREFR::SetScale
 
 #define k_Actor_HasPerkInRank						0x00C8CEA0	// 0C0C3F0	// 0C0C060	// 0DA6600	// 0DA64E0	// 0DA64E0	//	Actor::HasPerkInRank
-#define k_Actor_SetPosition							0x040C5B630	// 0BDAB80	//			// 0D77690							// Actor::Func00CA
-#define k_Actor_PutCreatedPackage					0x00C7C6E0	//	0BFBC30	//			// 0D96C70							// Actor::Func00FA
+#define k_Actor_SetPosition							0x00C5B630	// 0BDAB80	//			// 0D77690							// Actor::Func00CA
+#define k_Actor_PutCreatedPackage					0x00C7C6E0	// 0BFBC30	//			// 0D96C70							// Actor::Func00FA
 #define k_Actor_DisableCollision					0x00C578E0	// 0BD6E30	//			// 0D73AB0	//	Actor::DisableCollision in DisableCollisionHandler::DoDisable = Func0001
 #define k_Actor_EnableCollision						0x00C57850	// 0BD6DA0	//			// 0D73A20	//	Actor::EnableCollision in EnableCollisionHandler::DoEnable = Func0001
 #define k_Actor_StopInteractingQuick				0x00CD6A80	// 0C55FD0	//			// 0E0EAA0							// It is probably a TESObjectREFR member, rather than an Actor member.
