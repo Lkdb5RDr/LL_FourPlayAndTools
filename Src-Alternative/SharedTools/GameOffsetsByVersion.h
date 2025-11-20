@@ -468,7 +468,7 @@
 
 #define k_TESActorBaseData_ST_ModifyFlag			0x003075A0	// 0307460	// 02B5F10	//			// 0149720 // TESActorBaseData::ModifyFlag
 
-#define k_SettingT_INISettingCollection_ST_Changed	0x00364F40	// 179A190	// 1684DB0	// 16849E0	// 1C91E10	// 1C91CF0	// 1C91CF0 // SettingT_INISettingCollection::Changed
+#define k_SettingT_INISettingCollection_ST_Changed	0x0179A860	// 179A190	// 1684DB0	// 16849E0	// 1C91E10	// 1C91CF0	// 1C91CF0 // SettingT_INISettingCollection::Changed
 
 #define k_Cmd_Default_Parse							0x005B3330	// 05B31F0	// 05621D0	// 04E7E00	//			// Cmd_Default_Parse
 #define k_ExtractArgs								0x005B04B0	// 05B0370	// 055F350	// 04E37D0	//			// ExtractArgs
