@@ -381,6 +381,7 @@ void GameplayPatches(void)
 
 bool SetMinimalMaxArraySize_internal(UInt32 newMaxArrraySize)
 {
+	_DMESSAGE("Entering GetFXCam");
 	bool result = true;
 	UInt32 maxArraySize = 0; // greater than 128 and up to $FFFFFFFF in theory (but don't, seriously). 0 means no change from vanilla
 	if (maxArraySize = GetMaxArraySize())
@@ -414,23 +415,27 @@ RelocPtr <SettingT_INISettingCollection_ST> g_fFreeCameraRotationSpeed_Camera(k_
 
 bool GetFXCam(StaticFunctionTag *base)
 {
+	_DMESSAGE("Entering GetFXCam");
 	return (*g_FXCamIsActive) ? true : false ;
 };
 
 bool GetFlyCam(StaticFunctionTag *base)
 {
+	_DMESSAGE("Entering GetFlyCam");
 	PlayerCamera_ST* pc = (*g_playerCamera_ST);
 	return CALL_MEMBER_FN(pc, CheckIfCameraStateIsSelected)(PlayerCamera::kCameraState_Free);
 };
 
 bool GetPaused(StaticFunctionTag *base)
 {
+	_DMESSAGE("Entering GetPaused");
 	Main_ST* m = (*g_Main_ST);
 	return m->pause ? true : false;
 };
 
 bool SetFlyCam(StaticFunctionTag *base, bool activate)
 {
+	_DMESSAGE("Entering SetFlyCam");
 	PlayerCamera_ST* pc = (*g_playerCamera_ST);
 	InputManager_ST* im = (*g_inputMgr_ST);
 
@@ -479,6 +484,7 @@ bool SetFlyCam(StaticFunctionTag *base, bool activate)
 
 float SetFlyCamSpeedMult(StaticFunctionTag *base, float speed, bool rotation=false)
 {
+	_DMESSAGE("Entering SetFlyCamSpeedMult");
 	float result = 0.0;
 	if (rotation)
 	{
@@ -501,6 +507,7 @@ float SetFlyCamSpeedMult(StaticFunctionTag *base, float speed, bool rotation=fal
 
 TESRace* GetActorPowerArmorRace(StaticFunctionTag *base, Actor* actor)	// returns the race of an actor when in power armor
 {
+	_DMESSAGE("Entering GetActorPowerArmorRace");
 	if (actor)
 	{
 		Actor_ST * actor_ST = Actor_ST::FromActor(actor);
@@ -520,6 +527,7 @@ TESRace* GetActorPowerArmorRace(StaticFunctionTag *base, Actor* actor)	// return
 
 BSFixedString GetActorPowerArmorSkeleton(StaticFunctionTag *base, Actor* actor)	// returns the skeleton of an actor when in power armor
 {
+	_DMESSAGE("Entering GetActorPowerArmorSkeleton");
 	if (!actor)
 		return "";
 	TESNPC * npc = NULL;
@@ -535,6 +543,7 @@ BSFixedString GetActorPowerArmorSkeleton(StaticFunctionTag *base, Actor* actor)	
 
 BSFixedString GetActorSkeleton(StaticFunctionTag *base, Actor* actor)
 {
+	_DMESSAGE("Entering GetActorSkeleton");
 	if (!actor)
 		return "";
 	BSFixedString result = "";
@@ -558,6 +567,7 @@ BSFixedString GetActorSkeleton(StaticFunctionTag *base, Actor* actor)
 
 BSFixedString GetActorActualSkeleton(StaticFunctionTag *base, Actor* actor)
 {
+	_DMESSAGE("Entering GetActorActualSkeleton");
 	if (!actor)
 		return "";
 	BSFixedString result = "";
@@ -967,6 +977,7 @@ float GetLLFPPluginVersion(StaticFunctionTag *base)
 
 BGSKeyword * GetKeywordByName(BSFixedString editorID)
 {
+	_DMESSAGE("Entering GetKeywordByName");
 	DataHandler* theDH = *g_dataHandler.GetPtr();
 	for (UInt32 i = 0; i < theDH->arrKYWD.count; i++)
 	{
@@ -983,6 +994,7 @@ BGSKeyword * GetKeywordByName_(StaticFunctionTag *base, BSFixedString editorID)
 
 VMArray<BGSKeyword*> GetAllKeywords()
 {
+	_DMESSAGE("Entering GetAllKeywords");
 	VMArray<BGSKeyword*> result;
 	DataHandler* theDH = *g_dataHandler.GetPtr();
 	for (UInt32 i = 0; i < theDH->arrKYWD.count; i++)
@@ -1001,6 +1013,7 @@ VMArray<BGSKeyword*> GetAllKeywords_(StaticFunctionTag *base)
 // Does not to persist.
 bool AddKeywordToForm(TESForm * thisForm, BGSKeyword * keyword)
 {
+	_DMESSAGE("Entering AddKeywordToForm");
 	bool result = false;
 	if (!thisForm || !keyword)
 		return result;
@@ -1036,6 +1049,7 @@ bool AddKeywordToForm_(StaticFunctionTag *base, TESForm * thisForm, BGSKeyword *
  
 bool DelKeywordFromForm(TESForm * thisForm, BGSKeyword * keyword)
 {
+	_DMESSAGE("Entering DelKeywordFromForm");
 	bool result = false;
 	if (!thisForm || !keyword)
 		return result;
@@ -1091,6 +1105,7 @@ T GetVirtualFunction(void* baseObject, int vtblIndex)
 
 bool HasKeyword(TESForm* form, BGSKeyword* keyword) 
 {
+	_DMESSAGE("Entering HasKeyword");
 	if (form && keyword)
 	{
 		IKeywordFormBase* keywordFormBase = DYNAMIC_CAST(form, TESForm, IKeywordFormBase);
@@ -1125,6 +1140,7 @@ bool HasKeywordInFormList(TESForm *form, BGSListForm* formList)
  
 BSFixedString OriginalPluginName(TESForm* akForm)
 {
+	_DMESSAGE("Entering OriginalPluginName");
 	TESForm_ST * form = (TESForm_ST *)akForm;
 	if (form)
 	{
@@ -1139,6 +1155,7 @@ BSFixedString OriginalPluginName(TESForm* akForm)
 
 UInt32 OriginalPluginID(TESForm* akForm)
 {
+	_DMESSAGE("Entering OriginalPluginID");
 	char name[0x0104];
 	strcpy_s(name, OriginalPluginName(akForm));
 	char * dot = strrchr(name, '.');
@@ -1173,6 +1190,7 @@ UInt32 GetFormType(StaticFunctionTag *base, TESForm* akForm)
 
 bool IsPersistent(StaticFunctionTag *base, TESForm* akForm)
 {
+	_DMESSAGE("Entering IsPersistent");
 	bool result = false;
 
 	if (akForm)
@@ -1186,6 +1204,7 @@ bool IsPersistent(StaticFunctionTag *base, TESForm* akForm)
 
 bool SetPersistent(StaticFunctionTag *base, TESForm* akForm, bool bValue)
 {
+	_DMESSAGE("Entering SetPersistent");
 	bool result = false;
 
 	if (akForm)
@@ -1202,6 +1221,7 @@ bool SetPersistent(StaticFunctionTag *base, TESForm* akForm, bool bValue)
 
 float GetScale(StaticFunctionTag *base, TESObjectREFR* akRef)
 {
+	_DMESSAGE("Entering GetScale");
 	float result = 0.0;
 
 	if (akRef)
@@ -1213,6 +1233,7 @@ float GetScale(StaticFunctionTag *base, TESObjectREFR* akRef)
 
 void SetScale(StaticFunctionTag *base, TESObjectREFR* akRef, float fScale)
 {
+	_DMESSAGE("Entering SetScale");
 	if (akRef)
 	{
 		CALL_MEMBER_FN(TESObjectREFR_ST::FromRef(akRef), SetScale)(fScale);
@@ -1316,6 +1337,7 @@ RelocAddr<_AddScriptAddedForm> AddScriptAddedForm(k_AddScriptAddedForm);
 
 void PopulateFormlist(StaticFunctionTag *base, BGSListForm *FormList, VMArray<BSFixedString> modNames, VMArray<UInt32> formIDs)
 {
+	_DMESSAGE("Entering PopulateFormlist");
 	BSFixedString modName;
 	UInt32 formID;
 	TESForm *formPtr;
@@ -1340,6 +1362,7 @@ void PopulateFormlist(StaticFunctionTag *base, BGSListForm *FormList, VMArray<BS
 
 void PlayIdle(StaticFunctionTag *base, Actor* actor, TESForm* idle)
 {
+	_DMESSAGE("Entering PlayIdle");
 	if(!actor || !idle)
 		return;
 
@@ -1354,6 +1377,7 @@ void PlayIdle(StaticFunctionTag *base, Actor* actor, TESForm* idle)
 
 void PlayMultipleIdles(StaticFunctionTag *base, VMArray<Actor*> actors, VMArray<TESForm*> idles)
 {
+	_DMESSAGE("Entering PlayMultipleIdles");
 	int numActors = actors.Length();
 	if (numActors == idles.Length())
 	{
@@ -1402,6 +1426,7 @@ void PlayMultipleIdles(StaticFunctionTag *base, VMArray<Actor*> actors, VMArray<
 
 void StopCurrentIdle(StaticFunctionTag* base, Actor* actor)
 {
+	_DMESSAGE("Entering StopCurrentIdle");
 	if (actor)
 	{
 		Actor_ST::PROCESSTYPE_ST* middleProcess = static_cast<Actor_ST::PROCESSTYPE_ST*>(actor->middleProcess);
@@ -1420,6 +1445,7 @@ static UInt32 CrosshairActorHandle = 0;		// Memorize the last one until a new on
 
 EventResult	CrosshairChangeHandler_ST::ReceiveEvent(ViewCasterUpdateEvent_ST* evn, void* dispatcher)
 {
+	// I am afraid of the cost... _DMESSAGE("Entering CrosshairChangeHandler_ST");
 	NiPointer<TESObjectREFR> pRef = nullptr;
 	CrosshairRefHandle = evn->value.crosshairHandler;
 
@@ -1452,6 +1478,7 @@ void CrosshairChangeHandler_ST::Register()
 
 void MessageCallback(F4SEMessagingInterface::Message * msg)
 {
+	_DMESSAGE("Entering MessageCallback");
 	if (msg->type == F4SEMessagingInterface::kMessage_PostLoadGame || msg->type == F4SEMessagingInterface::kMessage_NewGame)
 	{
 		CrosshairChangeHandler_ST::Register();
@@ -1460,6 +1487,7 @@ void MessageCallback(F4SEMessagingInterface::Message * msg)
 
 TESObjectREFR * LastCrossHairRef(StaticFunctionTag *base)
 {
+	_DMESSAGE("Entering LastCrossHairRef");
 	NiPointer<TESObjectREFR> pRef = nullptr;
 	LookupREFRByHandle(CrosshairRefHandle, pRef);
 	return pRef;
@@ -1467,6 +1495,7 @@ TESObjectREFR * LastCrossHairRef(StaticFunctionTag *base)
 
 Actor * LastCrossHairActor(StaticFunctionTag *base)
 {
+	_DMESSAGE("Entering LastCrossHairActor");
 	NiPointer<TESObjectREFR> pRef = nullptr;
 	Actor* a = nullptr;
 	LookupREFRByHandle(CrosshairActorHandle, pRef);
@@ -1485,6 +1514,7 @@ RelocPtr <byte> g_collisionState(k_collisionState);
 
 bool ObjectReferenceSetCollision(StaticFunctionTag * base, TESObjectREFR* object, bool state = true)
 {
+	_DMESSAGE("Entering ObjectReferenceSetCollision");
 	if (!object)
 	{
 		bool current = *g_collisionState ? true : false;
@@ -1508,6 +1538,7 @@ bool ObjectReferenceSetCollision(StaticFunctionTag * base, TESObjectREFR* object
 
 bool ObjectReferenceGetCollision(StaticFunctionTag * base, TESObjectREFR* object)
 {
+	_DMESSAGE("Entering ObjectReferenceGetCollision");
 	if (!object)
 		return *g_collisionState ? true : false;
 	else
@@ -1521,6 +1552,7 @@ RelocAddr <uintptr_t> s_ExtraTextDisplayDataVtbl(k_ExtraTextDisplayDataVtbl);
 
 bool ObjectReferenceSetSimpleDisplayName(StaticFunctionTag * base, TESObjectREFR* object, BSFixedString text)
 {
+	_DMESSAGE("Entering ObjectReferenceSetSimpleDisplayName");
 
 	if (!object)
 		return false;
@@ -1549,6 +1581,7 @@ bool ObjectReferenceSetSimpleDisplayName(StaticFunctionTag * base, TESObjectREFR
 
 void SetRefAngle(StaticFunctionTag *base, TESObjectREFR *ref, float degX, float degY, float degZ)
 {
+	_DMESSAGE("Entering SetRefAngle");
 	if (ref)
 	{
 		float radX = degX * M_PI / 180.0;
@@ -1561,6 +1594,7 @@ void SetRefAngle(StaticFunctionTag *base, TESObjectREFR *ref, float degX, float 
 
 void SetRefNoCollision(StaticFunctionTag *base, TESObjectREFR *ref, bool state)
 {
+	_DMESSAGE("Entering SetRefNoCollision");
 	if (ref)
 	{
 		CALL_MEMBER_FN((TESObjectREFR_ST *)ref, SetNoCollision)(state);
@@ -1571,6 +1605,7 @@ void SetRefNoCollision(StaticFunctionTag *base, TESObjectREFR *ref, bool state)
 
 UInt32 GetNumRefsInCell(StaticFunctionTag *base, TESObjectCELL* thisCell, UInt32 formType)
 {
+	_DMESSAGE("Entering GetNumRefsInCell");
 	if (!thisCell)
 		return 0;
 
@@ -1592,6 +1627,7 @@ UInt32 GetNumRefsInCell(StaticFunctionTag *base, TESObjectCELL* thisCell, UInt32
 
 TESObjectREFR * GetNthRefInCell(StaticFunctionTag *base, TESObjectCELL * thisCell, UInt32 index, UInt32 formType)
 {
+	_DMESSAGE("Entering GetNthRefInCell");
 	if (!thisCell)
 		return NULL;
 
@@ -1618,6 +1654,7 @@ TESObjectREFR * GetNthRefInCell(StaticFunctionTag *base, TESObjectCELL * thisCel
 
 bool ActorBaseIsClean(StaticFunctionTag * base, Actor* actor)
 {
+	_DMESSAGE("Entering ActorBaseIsClean");
 
 	if (!actor)
 		return false;
@@ -1627,6 +1664,7 @@ bool ActorBaseIsClean(StaticFunctionTag * base, Actor* actor)
 
 TESForm * GetActorBaseSkinForm(StaticFunctionTag * base, Actor* actor)
 {
+	_DMESSAGE("Entering GetActorBaseSkinForm");
 	if (!actor)
 		return nullptr;
 
@@ -1644,6 +1682,7 @@ TESForm * GetActorBaseSkinForm(StaticFunctionTag * base, Actor* actor)
 
 bool CopyActorBaseskinForm(StaticFunctionTag * base, Actor* srcActor, Actor* dstActor)
 {
+	_DMESSAGE("Entering CopyActorBaseskinForm");
 	if (!srcActor || !dstActor)
 		return false;
 
@@ -1680,6 +1719,7 @@ RelocPtr <float> fFGBlinkClosedValue(k_fFGBlinkClosedValue);
 //Enable or disable blinking. Disabling allows MFG morphs to work on eyelids(morph ID 18 and 41)
 void SetAllowBlinking(StaticFunctionTag *base, bool bState)
 {
+	_DMESSAGE("Entering SetAllowBlinking");
 	if (bState) // restore default values
 	{
 		*fFGBlinkClosedValue = 1.0;
@@ -1765,11 +1805,13 @@ bool MfgMorph_internal(Actor* actor, SInt32 morphID, SInt32 intensity)
 
 bool MfgMorph(StaticFunctionTag* base, Actor* actor, SInt32 morphID, SInt32 intensity)
 {
+	_DMESSAGE("Entering MfgMorph");
 	return MfgMorph_internal(actor, morphID, intensity);
 }
 
 bool MfgResetMorphs(StaticFunctionTag* base, Actor* actor)
 {
+	_DMESSAGE("Entering MfgResetMorphs");
 	float *morphData = GetMorphData(actor);
 	if (morphData)
 	{
@@ -1783,6 +1825,7 @@ bool MfgResetMorphs(StaticFunctionTag* base, Actor* actor)
 
 VMArray<float> MfgSaveMorphs(StaticFunctionTag* base, Actor* actor)
 {
+	_DMESSAGE("Entering MfgSaveMorphs");
 	VMArray<float> result;
 	float *morphData = GetMorphData(actor);
 	if (morphData)
@@ -1797,6 +1840,7 @@ VMArray<float> MfgSaveMorphs(StaticFunctionTag* base, Actor* actor)
 
 bool MfgRestoreMorphs(StaticFunctionTag* base, Actor* actor, VMArray<float> values)
 {
+	_DMESSAGE("Entering MfgRestoreMorphs");
 	float *morphData = GetMorphData(actor);
 	if ((morphData) && (values.Length() == 0x36))
 	{
@@ -1810,6 +1854,7 @@ bool MfgRestoreMorphs(StaticFunctionTag* base, Actor* actor, VMArray<float> valu
 
 bool MfgCopyMorphs(StaticFunctionTag* base, Actor* actor0, Actor* actor1)
 {
+	_DMESSAGE("Entering MfgCopyMorphs");
 	float *src = GetMorphData(actor0);
 	float *dst = GetMorphData(actor1);
 	if (src && dst)
@@ -1823,6 +1868,7 @@ bool MfgCopyMorphs(StaticFunctionTag* base, Actor* actor0, Actor* actor1)
 
 bool MfgApplyMorphSet(StaticFunctionTag* base, Actor* actor, VMArray<SInt32> morphIDs, VMArray<SInt32> values)
 {
+	_DMESSAGE("Entering MfgApplyMorphSet");
 	float *morphData = GetMorphData(actor);
 	if (!morphData)
 		return false;
@@ -2021,6 +2067,7 @@ UInt32 SetVolumeWav(StaticFunctionTag* base, UInt32 volumeA, UInt32 volumeB)
 
 BSFixedString VoiceMessage(StaticFunctionTag* base, BSFixedString plugin, BSFixedString text)
 {
+	_DMESSAGE("Entering VoiceMessage");
 	BSFixedString section = text;
 
 	std::string	s_runtimePath = GetRuntimeDirectory();
@@ -2112,6 +2159,7 @@ BSFixedString GetINIString(StaticFunctionTag* base, BSFixedString ini)
 
 void SetActorPosition(StaticFunctionTag *base, Actor *akActor, float X, float Y, float Z)
 {
+	_DMESSAGE("Entering SetActorPosition");
 	if (akActor)
 	{
 		NiPoint3 newPos(X, Y, Z);
@@ -2122,6 +2170,7 @@ void SetActorPosition(StaticFunctionTag *base, Actor *akActor, float X, float Y,
 
 void EnableActorCollision(StaticFunctionTag* base, Actor* akActor)
 {
+	_DMESSAGE("Entering EnableActorCollision");
 	if (akActor)
 	{
 		Actor_ST* actor_ST = Actor_ST::FromActor(akActor);
@@ -2131,6 +2180,7 @@ void EnableActorCollision(StaticFunctionTag* base, Actor* akActor)
 
 void DisableActorCollision(StaticFunctionTag* base, Actor* akActor)
 {
+	_DMESSAGE("Entering DisableActorCollision");
 	if (akActor)
 	{
 		Actor_ST* actor_ST = Actor_ST::FromActor(akActor);
@@ -2140,6 +2190,7 @@ void DisableActorCollision(StaticFunctionTag* base, Actor* akActor)
 
 void ActorStopInteractingQuick(StaticFunctionTag* base, Actor* akActor)
 {
+	_DMESSAGE("Entering ActorStopInteractingQuick");
 	if (akActor)
 	{
 		Actor_ST* actor_ST = Actor_ST::FromActor(akActor);
@@ -2150,6 +2201,7 @@ void ActorStopInteractingQuick(StaticFunctionTag* base, Actor* akActor)
 // Update actor 3D equipment only(less expensive than QueueUpdate 0xC)
 void ActorUpdateEquipment(StaticFunctionTag* base, Actor* actor)
 {
+	_DMESSAGE("Entering ActorUpdateEquipment");
 	if (actor)
 	{
 		Actor_ST* actor_ST = Actor_ST::FromActor(actor);
@@ -2165,6 +2217,7 @@ void ActorUpdateEquipment(StaticFunctionTag* base, Actor* actor)
 // Force AI package
 void ActorSetPackageOverride(StaticFunctionTag *base, Actor *actor, TESForm *pkg)
 {
+	_DMESSAGE("Entering ActorSetPackageOverride");
 	if (actor && pkg && pkg->formType == kFormType_PACK)
 	{
 		Actor_ST *a = Actor_ST::FromActor(actor);
@@ -2183,6 +2236,7 @@ void ActorSetPackageOverride(StaticFunctionTag *base, Actor *actor, TESForm *pkg
 // Clear AI package override
 void ActorClearPackageOverride(StaticFunctionTag *base, Actor *actor)
 {
+	_DMESSAGE("Entering ActorClearPackageOverride");
 	if (actor)
 	{
 		Actor_ST *a = Actor_ST::FromActor(actor);
@@ -2200,6 +2254,7 @@ void ActorClearPackageOverride(StaticFunctionTag *base, Actor *actor)
 
 void ActorSetIgnoringCombat(StaticFunctionTag *base, Actor *actor, bool state)
 {
+	_DMESSAGE("Entering ActorSetIgnoringCombat");
 	if (actor)
 	{
 		Actor_ST *a = Actor_ST::FromActor(actor);
@@ -2214,6 +2269,7 @@ void ActorSetIgnoringCombat(StaticFunctionTag *base, Actor *actor, bool state)
 
 bool ActorGetIgnoringCombat(StaticFunctionTag *base, Actor *actor)
 {
+	_DMESSAGE("Entering ActorGetIgnoringCombat");
 	bool result = false;
 	if (actor)
 	{
@@ -2231,6 +2287,7 @@ bool ActorGetIgnoringCombat(StaticFunctionTag *base, Actor *actor)
 // Update Player Character 3D
 void PlayerUpdateEquipment(StaticFunctionTag* base)
 {
+	_DMESSAGE("Entering PlayerUpdateEquipment");
 	PlayerCharacter_ST *playerRef = PlayerCharacter_ST::FromPlayerCharacter(*g_player);
 	CALL_MEMBER_FN(playerRef, UpdatePlayer3d)();
 }
@@ -2238,6 +2295,7 @@ void PlayerUpdateEquipment(StaticFunctionTag* base)
 // From F4SE PapyrusActor.c
 TESObjectREFR * GetFurnitureReference(Actor * actor)
 {
+	_DMESSAGE("Entering GetFurnitureReference");
 	NiPointer<TESObjectREFR> refr;
 	if (!actor)
 		return nullptr;
@@ -2262,6 +2320,7 @@ TESObjectREFR * GetFurnitureReference(Actor * actor)
 
 TESObjectREFR * GetActorInFurniture(TESObjectREFR *furnRef)
 {
+	_DMESSAGE("Entering GetActorInFurniture");
 	if (!furnRef)
 		return nullptr;
 
@@ -2343,6 +2402,7 @@ int get_random_int(int min, int max)
 
 TESObjectCELL* GetCellAtCoords(TESWorldSpace_ST* world, SInt16 cellX, SInt16 cellY)
 {
+	_DMESSAGE("Entering GetCellAtCoords");
 	UInt32 cellKey = (cellX << 16) | (cellY & 0x0000FFFF);
 	auto it = world->CellMap.find(cellKey);
 	if (it != world->CellMap.end())
@@ -2353,6 +2413,7 @@ TESObjectCELL* GetCellAtCoords(TESWorldSpace_ST* world, SInt16 cellX, SInt16 cel
 
 void generateAttractionValues(Actor *targetActor)
 {
+	_DMESSAGE("Entering generateAttractionValues");
 	MODAAFAV(targetActor, AAF_ATTRACTION_AGILITY, get_random_float(0.0, 10.0));
 	MODAAFAV(targetActor, AAF_ATTRACTION_CHARISMA, get_random_float(0.0, 10.0));
 	MODAAFAV(targetActor, AAF_ATTRACTION_EXPERIENCE, get_random_float(0.0, 10.0));
@@ -2366,6 +2427,7 @@ void generateAttractionValues(Actor *targetActor)
 
 VMArray<VMVariable>getAttractionProfile(Actor *targetActor)
 {
+	_DMESSAGE("Entering getAttractionProfile");
 	if (GETAAFAV(targetActor, AAF_ISATTRACTIONGENERATED) == 0.0)
 		generateAttractionValues(targetActor);
 
@@ -2384,6 +2446,7 @@ VMArray<VMVariable>getAttractionProfile(Actor *targetActor)
 
 VMArray<VMVariable> getAttractionQualities(Actor *targetActor)
 {
+	_DMESSAGE("Entering getAttractionQualities");
 	VMArray<VMVariable>  attractionQualities;
 	AddToVarArray<float>(&attractionQualities, GETAV(targetActor, AGILITY));
 	AddToVarArray<float>(&attractionQualities, GETAV(targetActor, CHARISMA));
@@ -2398,6 +2461,7 @@ VMArray<VMVariable> getAttractionQualities(Actor *targetActor)
 
 BSFixedString GetName(TESForm* thisForm)
 {
+	_DMESSAGE("Entering GetName");
 	if (!thisForm)
 		return BSFixedString();
 
@@ -2410,6 +2474,7 @@ BSFixedString GetName(TESForm* thisForm)
 
 BSFixedString GetDisplayName(TESObjectREFR *ref)
 {
+	_DMESSAGE("Entering GetDisplayName");
 	TESForm * baseForm = ref->baseForm;
 	ExtraDataList * extraDataList = ref->extraDataList;
 
@@ -2471,6 +2536,7 @@ bool AAF_GetGender_internal(Actor* targetActor)
 
 bool AAF_GetGender(StaticFunctionTag* base, Actor* targetActor)
 {
+	_DMESSAGE("Entering AAF_GetGender");
 	bool gender = AAF_GetGender_internal(targetActor);
 
 #ifdef _DEBUG
@@ -2485,6 +2551,7 @@ bool AAF_GetGender(StaticFunctionTag* base, Actor* targetActor)
 
 VMArray<VMVariable> AAF_MakeActorData(StaticFunctionTag *base, Actor *targetActor, bool includeDistance, VMArray<BGSKeyword *>conditionKeywords)
 {
+	_DMESSAGE("Entering AAF_MakeActorData");
 	VMArray<VMVariable> resultData;
 	bool gender;
 	float distance = 0.0;
@@ -2542,6 +2609,7 @@ VMArray<VMVariable> AAF_MakeActorData(StaticFunctionTag *base, Actor *targetActo
 
 bool AAF_IsValidLocation(StaticFunctionTag *base, TESObjectREFR *targetLocation, VMArray<VMVariable>actorGroup)
 {
+	_DMESSAGE("Entering AAF_IsValidLocation");
 	TESForm *tF = (TESForm*)DYNAMIC_CAST(targetLocation, TESObjectREFR, TESForm);
 	if (tF->flags & (TESForm::kFlag_IsDeleted | TESForm::kFlag_IsDisabled))
 		return false;
@@ -2572,6 +2640,7 @@ bool AAF_IsValidLocation(StaticFunctionTag *base, TESObjectREFR *targetLocation,
 
 VMArray<VMVariable> AAF_MakeLocationData(StaticFunctionTag *base, TESObjectREFR *target, bool includeDistance)
 {
+	_DMESSAGE("Entering AAF_MakeLocationData");
 	float distance = 0;
 
 	if (includeDistance)
@@ -2587,6 +2656,7 @@ VMArray<VMVariable> AAF_MakeLocationData(StaticFunctionTag *base, TESObjectREFR 
 
 void GetValidLocationsInCell(TESObjectCELL* thisCell, VMArray<VMVariable> *result, TESObjectREFR *targetRef, vector<UInt32> allowedForms, VMArray<VMVariable>actorGroup, bool quickScan, float radius)
 {
+	_DMESSAGE("Entering GetValidLocationsInCell");
 	if (thisCell)
 	{
 		TESObjectREFR* pRef;
@@ -2614,6 +2684,7 @@ void GetValidLocationsInCell(TESObjectCELL* thisCell, VMArray<VMVariable> *resul
 
 VMVariable AAF_GetLocationData(StaticFunctionTag* base, UInt32 scanLocation, VMArray<VMVariable> furnFormIDs, VMArray<VMVariable> furnMods, VMArray<VMVariable>actorGroup, bool quickScan, float radius)
 {
+	_DMESSAGE("Entering AAF_GetLocationData");
 	VMArray<VMVariable> result;
 	vector<UInt32> allowedForms;
 	VMVariable tmpVar;
@@ -2679,6 +2750,7 @@ VMVariable AAF_GetLocationData(StaticFunctionTag* base, UInt32 scanLocation, VMA
 
 VMArray<VMVariable> AAF_ProcessFurnitureList(StaticFunctionTag *base, VMArray<VMVariable> akArgs)
 {
+	_DMESSAGE("Entering AAF_ProcessFurnitureList");
 	VMArray<VMVariable> result;
 	VMArray<VMVariable> varFormIDs;
 	VMArray <VMVariable> varSources;
@@ -2717,6 +2789,7 @@ VMArray<VMVariable> AAF_ProcessFurnitureList(StaticFunctionTag *base, VMArray<VM
 
 bool AAF_GetBlockedStatus(StaticFunctionTag *base, Actor *targetActor)
 {
+	_DMESSAGE("Entering AAF_GetBlockedStatus");
 	if (targetActor)
 	{
 		TESForm* form = GetFormFromPlugin(NULL, "AAF.esm", 0x022BB1);	// AAF_BlockedKeywords
@@ -2746,6 +2819,7 @@ bool AAF_GetBlockedStatus(StaticFunctionTag *base, Actor *targetActor)
 
 bool AAF_IsValidActor(StaticFunctionTag *base, Actor *targetActor)
 {
+	_DMESSAGE("Entering AAF_IsValidActor");
 	if (targetActor)
 	{
 		TESForm *tF = DYNAMIC_CAST(targetActor, Actor, TESForm);
@@ -2758,6 +2832,7 @@ bool AAF_IsValidActor(StaticFunctionTag *base, Actor *targetActor)
 
 bool AAF_IsAvailableActor(StaticFunctionTag *base, Actor *targetActor)
 {
+	_DMESSAGE("Entering AAF_IsAvailableActor");
 	if (targetActor)
 	{
 		TESForm *pF = GetFormFromPlugin(base, "AAF.esm", 0x00915A);
@@ -2771,6 +2846,7 @@ bool AAF_IsAvailableActor(StaticFunctionTag *base, Actor *targetActor)
 
 void GetActorsInCell(TESObjectCELL* thisCell, VMArray<Actor*>*result, TESObjectREFR *targetRef, float radius)
 {
+	_DMESSAGE("Entering GetActorsInCell");
 	TESForm *tF = GetFormFromPlugin(NULL, "AAF.esm", 0x000F9B); // AAF_ActorTypeList
 	BGSListForm *AAF_ActorTypeList = DYNAMIC_CAST(tF, TESForm, BGSListForm);
 	TESObjectREFR *PlayerRef = (TESObjectREFR *)LookupFormByID(0x14);
@@ -2802,6 +2878,7 @@ void GetActorsInCell(TESObjectCELL* thisCell, VMArray<Actor*>*result, TESObjectR
 
 VMArray<Actor*> AAF_PerformActorScan(StaticFunctionTag* base, TESObjectREFR *ref, float radius)
 {
+	_DMESSAGE("Entering AAF_PerformActorScan");
 	VMArray<Actor*> result;
 
 	if (ref)
@@ -3370,6 +3447,7 @@ class Scaleform_SetCustomConfigOption : public GFxFunctionHandler
 public:
 	virtual void Invoke(Args * args)
 	{
+		_DMESSAGE("Entering Scaleform_SetCustomConfigOption");
 		BSFixedString name(args->args[0].GetString());
 		BSFixedString section(args->args[1].GetString());
 		BSFixedString key(args->args[2].GetString());
@@ -3384,6 +3462,7 @@ class Scaleform_GetCustomConfigOption : public GFxFunctionHandler
 public:
 	virtual void Invoke(Args * args)
 	{
+		_DMESSAGE("Entering Scaleform_GetCustomConfigOption");
 		BSFixedString name(args->args[0].GetString());
 		BSFixedString section(args->args[1].GetString());
 		BSFixedString key(args->args[2].GetString());
@@ -3397,6 +3476,7 @@ class Scaleform_MfgMorph : public GFxFunctionHandler
 public:
 	virtual void Invoke(Args * args)
 	{
+		_DMESSAGE("Entering Scaleform_MfgMorph");
 		UInt32 FormID = args->args[0].GetInt();
 		UInt32 MorphID = args->args[1].GetInt();
 		UInt32 Intensity = args->args[2].GetInt();
@@ -3414,6 +3494,7 @@ class Scaleform_HasKeyword : public GFxFunctionHandler
 public:
 	virtual void Invoke(Args * args)
 	{
+		_DMESSAGE("Entering Scaleform_HasKeyword");
 		bool result = false;
 		UInt32 FormID = args->args[0].GetInt();
 		BSFixedString KeywordName(args->args[1].GetString());
@@ -3433,6 +3514,7 @@ class Scaleform_WornHasKeyword : public GFxFunctionHandler
 public:
 	virtual void Invoke(Args * args)
 	{
+		_DMESSAGE("Entering Scaleform_WornHasKeyword");
 		bool result = false;
 		UInt32 FormID = args->args[0].GetInt();
 		BSFixedString KeywordName(args->args[1].GetString());
@@ -3456,6 +3538,7 @@ class Scaleform_GetScale : public GFxFunctionHandler
 public:
 	virtual void Invoke(Args* args)
 	{
+		_DMESSAGE("Entering Scaleform_GetScale");
 		UInt32 FormID = args->args[0].GetInt();
 		float result = 0.0;
 
@@ -3478,6 +3561,7 @@ class Scaleform_SetScale : public GFxFunctionHandler
 public:
 	virtual void Invoke(Args * args)
 	{
+		_DMESSAGE("Entering Scaleform_SetScale");
 		UInt32 FormID = args->args[0].GetInt();
 		float Scale = args->args[1].GetNumber();
 

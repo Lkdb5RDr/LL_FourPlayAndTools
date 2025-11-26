@@ -518,7 +518,7 @@
 
 // And those are class member functions offsets for SharedTools.h
 
-#define k_TESObjectREFR_SetAngleOnReference			0x00000000	// 0510970	// 0510830	// 04BF810	//			// 040BD70	//	TESObjectREFR::SetAngleOnReference
+#define k_TESObjectREFR_SetAngleOnReference			0x00510D60	// 0510970	// 0510830	// 04BF810	//			// 040BD70	//	TESObjectREFR::SetAngleOnReference
 #define k_TESObjectREFR_SetNoCollision				0x004F15A0	// 04F11B0	// 04F1070	// 04A00A0	//			// 03EDEE0	//	TESObjectREFR::SetNoCollision
 #define k_TESObjectREFR_GetRefPersists				0x004F8E90	// 04F8AA0	// 04F8960	// 04A7990	//			// 03F4DA0	//	TESObjectREFR::GetRefPersists
 #define k_TESObjectREFR_SetRefPersists				0x004F8EF0	// 04F8B00	// 04F89C0	// 04A79F0	//			// 03F4E00	//	TESObjectREFR::SetRefPersists
@@ -534,7 +534,7 @@
 #define k_Actor_SetPosition							0x00C5C0A0	// 0C5BBF0	// 0C5B630	// 0BDAB80	//			// 0D77690	// Actor::Func00CA
 #define k_Actor_PutCreatedPackage					0x00C7D150	// 0C7CCA0	// 0C7C6E0	// 0BFBC30	//			// 0D96C70	// Actor::Func00FA
 #define k_Actor_DisableCollision					0x00C58350	// 0C57EA0	// 0C578E0	// 0BD6E30	//			// 0D73AB0	//	Actor::DisableCollision in DisableCollisionHandler::DoDisable = Func0001
-#define k_Actor_EnableCollision						0x00DFAC90	// 0C57E10	// 0C57850	// 0BD6DA0	//			// 0D73A20	//	Actor::EnableCollision in EnableCollisionHandler::DoEnable = Func0001
+#define k_Actor_EnableCollision						0x00C582C0	// 0C57E10	// 0C57850	// 0BD6DA0	//			// 0D73A20	//	Actor::EnableCollision in EnableCollisionHandler::DoEnable = Func0001
 #define k_Actor_StopInteractingQuick				0x00CD74F0	// 0CD7040	// 0CD6A80	// 0C55FD0	//			// 0E0EAA0	// It is probably a TESObjectREFR member, rather than an Actor member. TESObjectREFR::StopInteractingQuick
 #define k_Actor_GetSex								0x00C58E80	// 0C589D0	// 0C58410	// 0BD7960	//			// 0D74610	// Actor.GetSex
 #define k_Actor_GetLevel							0x00C5E930	// 0C5E480	// 0C5DEC0	// 0BDD41B	//			// 0D79E90	// Actor::GetLevel
@@ -546,7 +546,7 @@
 #define k_PROCESSTYPE_PlayIdle						0x00CF6620	// 0CF6170	// 0CF5BB0	// 0C75110	// 0C74D80	// 0E35510 // Actor::AIProcess::PlayIdle
 #define k_PROCESSTYPE_StopCurrentIdle				0x00CF69C0	// 0CF6510	// 0CF5F50	// 0C754B0	//			// 0E358C0 // Actor::AIProcess::StopCurrentIdle
 #define k_PROCESSTYPE_ClearCurrentDataforProcess	0x00D34DD0	// 0D34920	// 0D34360	// 0CB38C0	//			// 0E77520 // Actor::AIProcess::ClearCurrentDataforProcess
-#define k_PROCESSTYPE_ClearCurrentPackage			0x00CECC24	// 0CEC770	// 0CEC1B0	// 0C6B710	//			// 0E2A670 // Actor::AIProcess::ClearCurrentPackage
+#define k_PROCESSTYPE_ClearCurrentPackage			0x00CECC20	// 0CEC770	// 0CEC1B0	// 0C6B710	//			// 0E2A670 // Actor::AIProcess::ClearCurrentPackage
 #define k_PROCESSTYPE_GetFadeAlpha					0x00D068E0	// 0D06430	// 0D05E70	// 00C853D0	//			// 0E450F0 // Actor::AIProcess::GetFadeAlpha
 #define k_PROCESSTYPE_GetFadeState					0x00D062D0	// 0D05E20	// 0D05860	// 0C84DC0	//			// 0E44AD0 // Actor::AIProcess::GetFadeState
 #define k_PROCESSTYPE_ForceFadeToNormal				0x00D06960	// 0D064B0	// 0D05EF0	// 0C85450	//			// 0E45170 // Actor::AIProcess::ForceFadeToNormal 	// Second func after GetFadeAlpha		// works on player and NPCs , actor cannot be NULL
