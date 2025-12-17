@@ -34,7 +34,7 @@ char pluginCustomIni[sizeof(pluginName)+sizeof(".ini")];
 
 PluginHandle	g_pluginHandle = kPluginHandle_Invalid;
 
-#define REQUIRED_RUNTIME RUNTIME_VERSION_1_10_980
+#define REQUIRED_RUNTIME CURRENT_RELEASE_RUNTIME
 
 F4SEScaleformInterface		* g_scaleform = NULL;
 F4SEPapyrusInterface		* g_papyrus = NULL;
@@ -185,7 +185,22 @@ void MessageCallback(F4SEMessagingInterface::Message * msg)
 extern "C"
 {
 
-bool F4SEPlugin_Query(const F4SEInterface * f4se, PluginInfo * info)
+	_declspec(dllexport) F4SEPluginVersionData F4SEPlugin_Version =
+	{
+		F4SEPluginVersionData::kVersion,
+
+		PLUGIN_VERSION,
+		PLUGIN_NAME,
+		PLUGIN_AUTHOR,
+
+		0,	// not version independent
+		0,	// not version independent (extended field)
+		{ REQUIRED_RUNTIME, 0 },	// compatible with this version only
+
+		0,	// works with any version of the script extender. you probably do not need to put anything here
+	};
+
+	bool F4SEPlugin_Query(const F4SEInterface * f4se, PluginInfo * info)
 {
 
 	OpenPluginLog();
@@ -289,8 +304,8 @@ bool F4SEPlugin_Query(const F4SEInterface * f4se, PluginInfo * info)
 
 bool F4SEPlugin_Load(const F4SEInterface * f4se)
 {
-	if ((g_pluginHandle != kPluginHandle_Invalid) || !F4SEPlugin_Query(f4se, NULL))
-		return false;
+	if (g_pluginHandle == kPluginHandle_Invalid)
+		return F4SEPlugin_Query(f4se, NULL);
 
 	_MESSAGE("%s loading...", pluginName);
 

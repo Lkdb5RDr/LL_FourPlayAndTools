@@ -1,6 +1,6 @@
 #pragma once
-#define PLUGIN_VERSION 980
-#define PLUGIN_VERSION_TEXT "980.0.0.0"
+#define PLUGIN_VERSION 11191
+#define PLUGIN_VERSION_TEXT "11191.0.0.0"
 
 #define PLUGIN_NAME "plugin_example"
 #define PLUGIN_AUTHOR "hlp"

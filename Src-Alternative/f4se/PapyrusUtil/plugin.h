@@ -2,8 +2,8 @@
 
 #define PAPYRUSUTIL_VERSION 45
 
-#include "skse64/PluginAPI.h"
-#include "skse64/GameAPI.h"
+#include "f4se/PluginAPI.h"
+#include "f4se/GameAPI.h"
 
 
 struct StaticFunctionTag;
@@ -12,7 +12,7 @@ struct StaticFunctionTag;
 namespace Plugin {
 	void InitPlugin();
 	bool RegisterFuncs(VMClassRegistry* registry);
-	void HandleSKSEMessage(SKSEMessagingInterface::Message * msg);
+	void HandleF4SEMessage(F4SEMessagingInterface::Message * msg);
 	UInt32 GetVersion(StaticFunctionTag* base);
 
 }
