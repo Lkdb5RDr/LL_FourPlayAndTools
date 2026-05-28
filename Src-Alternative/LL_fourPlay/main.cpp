@@ -410,8 +410,8 @@ RelocPtr <InputManager_ST *> g_inputMgr_ST(k_inputMgr_ST);
 
 RelocPtr <Main_ST *> g_Main_ST(k_Main_ST);
 
-RelocPtr <SettingT_INISettingCollection_ST> g_fFreeCameraTranslationSpeed_Camera(k_fFreeCameraTranslationSpeed_Camera-8) ;
-RelocPtr <SettingT_INISettingCollection_ST> g_fFreeCameraRotationSpeed_Camera(k_fFreeCameraRotationSpeed_Camera-8) ;
+RelocPtr <SettingT_INISettingCollection_ST> g_fFreeCameraTranslationSpeed_Camera(k_fFreeCameraTranslationSpeed_Camera) ;
+RelocPtr <SettingT_INISettingCollection_ST> g_fFreeCameraRotationSpeed_Camera(k_fFreeCameraRotationSpeed_Camera) ;
 
 bool GetFXCam(StaticFunctionTag *base)
 {

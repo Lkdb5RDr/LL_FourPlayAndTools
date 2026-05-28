@@ -589,6 +589,7 @@
 #define k_ControlPlayerCamera					0x0166F330	// 166AE10	// 166A490	// 1669DC0	// 15551C0	// 1554DF0	// 1B285A0	// 1B28480	// 1B28480	// InputManager::ControlPlayerCamera
 #define k_ControlPlayer							0x0166F400	// 166AEE0	// 166A560	// 1669E90	// 1555290	// 1554EC0	// 1B28690	// 1B28570	// 1B28570	// InputManager::ControlPlayer
 
+// since 984 used as offset - 8, so was in error for all  previous versions except 984. Reverted to directoffset i the source.
 #define k_fFreeCameraTranslationSpeed_Camera	0x02F2DEC8	// 2F22EB8	// 2F1DEB8	// 2F1CEB8	// 2CC7940	// 2CC6918	// 38048E8	// 383C8E8	// aFfreecameratra
 #define k_fFreeCameraRotationSpeed_Camera		0x02F2DEE0	// 2F22ED0	// 2F1DED0	// 2F1CED0	// 2CC7958	// 2CC6930	// 3804900	// 383C900
 
