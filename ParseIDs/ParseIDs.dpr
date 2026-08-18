@@ -54,9 +54,9 @@ const
   epilogueCsv = '';
 
 var
-  SourceDir    : string = 'D:\VMods\fallout4\mods\Address Library - All In One-47327-AIO-1715667241\F4SE\Plugins';
-  SourceVer    : string = '*';
-  BaseModule   : int64 = $140000000 ;
+  SourceDir : string = 'C:\Local\F4\DEV\CurrentAL';
+  SourceVer : string = '*';
+  BaseModule : int64 = $140000000 ;
   CountPerFile : int64 = 10000000 ;
   adVersions   : TStringList;
   IDsFile      : string = 'C:\Local\F4\DEV\GitHubWork\libxse\commonlibf4\include\RE\IDs.h';
@@ -65,6 +65,20 @@ var
   AllChars     : TSysCharSet = ['a'..'z','0'..'9','_','{','}',':'];
   Idents       : TStringList;
   IDCs         : TStringList;
+
+(*
+Source - https://stackoverflow.com/a
+Posted by Ramon
+Retrieved 2025-11-27, License - CC BY-SA 3.0
+*)
+
+function IsOpen(const txt:TextFile):Boolean;
+const
+  fmTextOpenRead = 55217;
+  fmTextOpenWrite = 55218;
+begin
+  Result := (TTextRec(txt).Mode = fmTextOpenRead) or (TTextRec(txt).Mode = fmTextOpenWrite)
+end;
 
   function OpenNamespace(namespace : string; Terms : TStringList; var i : integer; var l : string) : string;
   begin
@@ -165,9 +179,13 @@ begin
           begin
             Inc(i);
             if i < Terms.Count then
-            begin
+            try
               ID := StrToInt(Terms[i]);
               Idents.AddObject(Namespace+'::'+Ident, TObject(ID));
+            except
+              WriteLN;
+              WriteLN(' Exception in Terms loop at index ' + IntToStr(i) + ' for ' + Namespace+'::'+Ident);
+              WriteLN;
             end;
           end;
         end
@@ -182,7 +200,7 @@ begin
   end;
 end;
 
-function MakeIDC(name: string; ID: int64; Offset: int64; Rel : int64; j : integer; IDasText : string): string;
+function MakeName(name: string; ID: int64; Offset: int64; Rel : int64; j : integer; IDasText : string): string;
 begin
   Result := '      MySetName( 0x0' + IntToHex(baseModule) + ' + 0x0' + IntToHex(Offset) +
               ', "ADF4::' + name + '", SN_FORCE + SN_NOCHECK + SN_PUBLIC + SN_NOWARN); // ' +
@@ -194,6 +212,12 @@ begin
   Result := '  //  MySetName( 0x0' + IntToHex(baseModule) + ' + 0x0' + IntToHex(0) +
               ', "ADF4::' + name + '", SN_FORCE + SN_NOCHECK + SN_PUBLIC + SN_NOWARN); // ' +
               IntToHex(0,0) + ' ' + IntToHex(0,0) + ' 0x0' + IntToHex(0,0) + ' Index:' + IntToStr(0) + #9 + 'ID:' + IntToStr(ID);
+end;
+
+function MakeCsv(adVersion : TStringList; i, j: integer; far: TADrecords ): string;
+begin
+  Result := adVersions[i] + ';' + IntToStr(j) + ';' + IntToStr(far[i, j].ID) + ';' + IntToHex(far[i, j].Offset,0) + ';' +
+    IntToHex(far[i, j].Rel,0) + ';' + '0x0'+IntToHex(far[i, j].Rel,0) + ';' + far[i, j].IDC;
 end;
 
 begin
@@ -248,10 +272,7 @@ begin
             ID := adr.ID;
             Offset := adr.offset;
             Rel := baseModule + adr.offset;
-            IDC := MakeIDC('ID'+IntToStr(ID), ID, Offset, Rel, j, '');
-              //'MySetName( 0x0' + IntToHex(baseModule) + ' + 0x0' + IntToHex(adr.Offset) +
-              //', "ADF4::ID' + IntToStr(adr.ID) + '", SN_FORCE + SN_NOCHECK + SN_PUBLIC + SN_NOWARN); // ' +
-              //IntToHex(Offset,0) + ' ' + IntToHex(Rel,0) + ' 0x0' + IntToHex(Rel,0) + ' Index:' + IntToStr(j);
+            IDC := MakeName('ID'+IntToStr(ID), ID, Offset, Rel, j, '');
           end;
           if (j mod 1000)=0 then Write('.');
           Inc(j);
@@ -270,15 +291,19 @@ begin
         DoParseIDs;
 
         var fcsv : Text;
-        AssignFile(fcsv, SourceDir + '\AllVersions.csv');
-        Rewrite(fcsv);
-        WriteLN(fcsv, prologueCsv);
+        if  SourceVer = '*' then
+        begin
+          AssignFile(fcsv, SourceDir + '\AllVersions.csv');
+          Rewrite(fcsv);
+          WriteLN(fcsv, prologueCsv);
+        end;
         if not DirectoryExists(SourceDir + '\idc') then TDirectory.CreateDirectory(SourceDir + '\idc');
 
         try
           IDCs := TStringList.Create;
           try
             var fi : Text;
+            var fc : Text;
             for i := 0 to Length(far)-1 do
               try
                 version := ChangeFileExt(adVersions[i], '.idc');
@@ -293,12 +318,16 @@ begin
                   AssignFile(fi, SourceDir+'\idc\'+adVersions[i]+'\'+version);
                   Rewrite(fi);
                   WriteLN(fi, Prologue);
+                  AssignFile(fc, SourceDir+'\idc\'+adVersions[i]+'\'+ChangeFileExt(adVersions[i], '.csv'));
+                  Rewrite(fc);
+                  WriteLN(fc, PrologueCsv);
                   var j : integer;
                   for j := 0 to Length(far[i])-1 do
                     begin
                       WriteLN(fi, #9+far[i, j].IDC);
-                      WriteLN(fcsv, adVersions[i] + ';' + IntToStr(far[i, j].ID) + ';' + IntToHex(far[i, j].Offset,0) + ';' +
-                        IntToHex(far[i, j].Rel,0) + ';' + '0x0'+IntToHex(far[i, j].Rel,0) + ';' + far[i, j].IDC );
+                      if IsOpen(fcsv) then
+                        WriteLN(fcsv, MakeCsv(adVersions, i, j, far));
+                      WriteLN(fc, MakeCsv(adVersions, i, j, far));
                       if (j mod 1000)=0 then Write('.');
                       if (j>0) and ((j mod CountPerFile)=0) then
                       begin
@@ -321,13 +350,7 @@ begin
                         begin
                           if Int64(Idents.Objects[k])=far[i, j].ID then
                           begin
-                            IDCs.Add(MakeIDC(
-                              Idents[k],
-                              far[i, j].ID,
-                              far[i,j].Offset,
-                              far[i,j].Rel,
-                              j,
-                              #9+'ID:'+IntToStr(far[i,j].ID)));
+                            IDCs.Add(MakeName(Idents[k], far[i, j].ID, far[i,j].Offset, far[i,j].Rel, j, #9+'ID:'+IntToStr(far[i,j].ID)));
                             Idents.Objects[k] := TObject(0);
                           end;
                         end;
@@ -336,13 +359,18 @@ begin
                 finally
                   WriteLN(fi, epilogue);
                   Close(fi);
+                  WriteLN(fc, epilogueCsv);
+                  Close(fc);
                   WriteLN;
                 end;
               except
               end;
           finally
-            WriteLN(fcsv, epilogueCsv);
-            Close(fcsv);
+            if IsOpen(fcsv) then
+            begin
+              WriteLN(fcsv, epilogueCsv);
+              Close(fcsv);
+            end;
           end;
         finally
           if IDCs.Count>0 then begin
