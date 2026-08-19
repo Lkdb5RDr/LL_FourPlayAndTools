@@ -1,6 +1,6 @@
 #pragma once
-#define PLUGIN_VERSION 60
-#define PLUGIN_VERSION_TEXT "60.0.0.0"
+#define PLUGIN_VERSION 61
+#define PLUGIN_VERSION_TEXT "61.0.0.0"
 
 #define PLUGIN_NAME "LL_fourPlay"
 #define PLUGIN_AUTHOR "jaam and more"
