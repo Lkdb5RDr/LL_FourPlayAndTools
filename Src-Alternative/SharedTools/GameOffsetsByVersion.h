@@ -801,7 +801,7 @@
 
 #define k_uFGBlinkLeftEyeMorphIndex				0x02F25D90	// 2F1AD90	// 2F1AD40	// 2F0FD40	// 2F0AD40	// 2F09D40	// 2CB4B00	//			// 037333F8
 #define k_uFGBlinkRightEyeMorphIndex			0x02F25DA8	// 2F1ADA8	// 2F1AD58	// 2F0FD58	// 2F0AD58	// 2F09D58	// 2CB4B18	//			// 03733410
-#define k_fFGBlinkClosedValue					0x02F1AD78	// 2F1AD78	// 2F1AD28	// 2F0FD28	// 2F0AD28	// 2F09D28	// 2CB4AE8	//			// 037333E0
+#define k_fFGBlinkClosedValue					0x02F25D78	// 2F1AD78	// 2F1AD28	// 2F0FD28	// 2F0AD28	// 2F09D28	// 2CB4AE8	//			// 037333E0
 
 // if I ever get back to this :)
 #define k_CallFunction							0x00000000	//			//			//			//			// 0533C00
@@ -825,7 +825,7 @@
 #define k_Actor_PutCreatedPackage					0x00C81C00	// 0C81870	// 0C816E0	// 0C7D150	// 0C7CCA0	// 0C7C6E0	// 0BFBC30	//			// 0D96C70	// Actor::Func00FA also Actor::PutCreatedPackage
 #define k_Actor_DisableCollision					0x00C5CE00	// 0C5CA70	// 0C5C8E0	// 0C58350	// 0C57EA0	// 0C578E0	// 0BD6E30	//			// 0D73AB0	//	Actor::DisableCollision in DisableCollisionHandler::DoDisable = Func0001 also ADF4::ID2229653
 #define k_Actor_EnableCollision						0x00C5CD70	// 0C5C9E0	// 0C5C850	// 0C582C0	// 0C57E10	// 0C57850	// 0BD6DA0	//			// 0D73A20	//	Actor::EnableCollision in EnableCollisionHandler::DoEnable = Func0001 also ADF4::ID2229652
-#define k_Actor_StopInteractingQuick				0x00CDBC10	// 0CDBC10	// 0CDBA80	// 0CD74F0	// 0CD7040	// 0CD6A80	// 0C55FD0	//			// 0E0EAA0	// It is probably a TESObjectREFR member, rather than an Actor member. TESObjectREFR::StopInteractingQuick also ADF4::ID2231227 ADF4::RE::ID::Actor::StopInteractingQuick
+#define k_Actor_StopInteractingQuick				0x00CDBFA0	// 0CDBC10	// 0CDBA80	// 0CD74F0	// 0CD7040	// 0CD6A80	// 0C55FD0	//			// 0E0EAA0	// It is probably a TESObjectREFR member, rather than an Actor member. TESObjectREFR::StopInteractingQuick also ADF4::ID2231227 ADF4::RE::ID::Actor::StopInteractingQuick
 #define k_Actor_GetSex								0x00C5D930	// 0C5D5A0	// 0C5D410	// 0C58E80	// 0C589D0	// 0C58410	// 0BD7960	//			// 0D74610	// Actor::GetSex also ADF4::ID2229674 ADF4::RE::ID::Actor::GetSex
 #define k_Actor_GetLevel							0x00C633E0	// 0C63050	// 0C62EC0	// 0C5E930	// 0C5E480	// 0C5DEC0	// 0BDD41B	//			// 0D79E90	// Actor::GetLevel also ADF4::ID2229734 ADF4::RE::ID::Actor::GetLevel
 #define k_Actor_IsDead								0x00C73DF0	// 0C73A60	// 0C738D0	// 0C6F340	// 0C6EE90	// 0C6E8D0	// 0BEDE20	//			// 0D89D40	// Actor::Func00C0 = Actor::IsDead also ADF4::ID2229903
