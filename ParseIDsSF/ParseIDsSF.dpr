@@ -1,14 +1,13 @@
-program ParseIDs;
+program ParseIDsSF;
 
 {$APPTYPE CONSOLE}
 
 {$R *.res}
 
 uses
-    System.SysUtils
-  , System.Classes
-  , System.IOUtils
-  ;
+  System.SysUtils,
+  System.Classes,
+  System.IOUtils;
 
 type
   TALrecord = record
@@ -21,7 +20,7 @@ type
     Rel:  int64;
     IDC:  string;
   end;
-  TADfile = file of int64;
+  TADfile = TFileStream;
   TADrecords = array of array of TADrecord;
 
 const
@@ -66,6 +65,7 @@ var
   adVersions   : TStringList;
   IDsFile      : string = 'C:\Local\F4\DEV\GitHubWork\libxse\commonlibf4\include\RE\IDs.h';
   namespace    : string = '';
+  namespaceT   : string = '';
   lowerLetters : TSysCharSet = ['a'..'z','0'..'9','_'];
   AllChars     : TSysCharSet = ['a'..'z','0'..'9','_','{','}',':'];
   Idents       : TStringList;
@@ -85,33 +85,44 @@ begin
   Result := (TTextRec(txt).Mode = fmTextOpenRead) or (TTextRec(txt).Mode = fmTextOpenWrite)
 end;
 
-  function OpenNamespace(namespace : string; Terms : TStringList; var i : integer; var l : string) : string;
+function OpenNamespace(namespace : string; Terms : TStringList; var i : integer; var l : string) : string;
+begin
+  i := i + 1;
+  if i < Terms.Count then
   begin
-    i := i + 1;
-    if i < Terms.Count then
-    begin
-      l := Terms[i];
-      if Length(namespace)>0 then namespace := namespace + '::';
-      namespace := namespace + l;
-    end;
-    Result := namespace;
+    l := Terms[i];
+    if Length(namespace)>0 then namespace := namespace + '::::';
+    namespace := namespace + l;
   end;
+  Result := namespace;
+end;
 
-  function CloseNamespace(namespace : string): string;
-  begin
-    var n : string := namespace;
-    var j : integer;
-    Result := '';
-    repeat
-      j := Pos('::', n);
-      if j >0 then
-      begin
-        Result := Result + Copy(n, 1, j+1);
-        Delete(n, 1, j+1);
-      end;
-    until j=0;
-    if Length(Result)>1 then Delete(Result, Length(Result)-1, 2);
-  end;
+function CloseNamespace(namespace : string): string;
+begin
+  var n : string := namespace;
+  var j : integer;
+  Result := '';
+  repeat
+    j := Pos('::::', n);
+    if j >0 then
+    begin
+      Result := Result + Copy(n, 1, j+1);
+      Delete(n, 1, j+1);
+    end;
+  until j=0;
+  if Length(Result)>1 then Delete(Result, Length(Result)-1, 2);
+end;
+
+function PrepNamespace(namespace : string): string;
+begin
+  var s : string := namespace;
+  var p : integer;
+  repeat
+    p := Pos('::::', s);
+    if p > 0 then s := Copy(s, 1, p) + Copy(s, p+3, length(s));
+  until p = 0;
+  Result := s;
+end;
 
 procedure DoParseIDs;
 var
@@ -184,13 +195,10 @@ begin
           begin
             Inc(i);
             if i < Terms.Count then
-            try
+            begin
               ID := StrToInt(Terms[i]);
-              Idents.AddObject(Namespace+'::'+Ident, TObject(ID));
-            except
-              WriteLN;
-              WriteLN(' Exception in Terms loop at index ' + IntToStr(i) + ' for ' + Namespace+'::'+Ident);
-              WriteLN;
+              namespaceT := PrepNamespace(namespace);
+              Idents.AddObject(NamespaceT+'::'+Ident, TObject(ID));
             end;
           end;
         end
@@ -208,15 +216,15 @@ end;
 function MakeName(name: string; ID: int64; Offset: int64; Rel : int64; j : integer; IDasText : string): string;
 begin
   Result := '      MySetName( 0x0' + IntToHex(baseModule) + ' + 0x0' + IntToHex(Offset) +
-              ', "ADF4::' + name + '", SN_FORCE + SN_NOCHECK + SN_PUBLIC + SN_NOWARN); // ' +
+              ', "ADSF::' + name + '", SN_FORCE + SN_NOCHECK + SN_PUBLIC + SN_NOWARN); // ' +
               IntToHex(Offset,0) + ' ' + IntToHex(Rel,0) + ' 0x0' + IntToHex(Rel,0) + ' Index:' + IntToStr(j) + IDasText;
 end;
 
-function MakeComment(name: string; ID: int64): string;
+function MakeComment(name: string; j : integer; ID: int64): string;
 begin
   Result := '  //  MySetName( 0x0' + IntToHex(baseModule) + ' + 0x0' + IntToHex(0) +
-              ', "ADF4::' + name + '", SN_FORCE + SN_NOCHECK + SN_PUBLIC + SN_NOWARN); // ' +
-              IntToHex(0,0) + ' ' + IntToHex(0,0) + ' 0x0' + IntToHex(0,0) + ' Index:' + IntToStr(0) + #9 + 'ID:' + IntToStr(ID);
+              ', "ADSF::' + name + '", SN_FORCE + SN_NOCHECK + SN_PUBLIC + SN_NOWARN); // ' +
+              IntToHex(0,0) + ' ' + IntToHex(0,0) + ' 0x0' + IntToHex(0,0) + ' Index:' + IntToStr(j) + #9 + 'ID:' + IntToStr(ID);
 end;
 
 function MakeCsv(adVersion : TStringList; i, j: integer; far: TADrecords ): string;
@@ -260,18 +268,135 @@ begin
       for version in adVersions do
       try
         WriteLN(Version);
-        AssignFile(fad, SourceDir+'\'+version);
-        Reset(fad);
-        var j : integer := 0;
-        var v : int64;
+        var t : string := SourceDir+'\'+version;
+        fad := TFileStream.Create(t, fmOpenRead  or fmShareDenyWrite);
+        var j : integer;
+        var v : int32;
+        var vv: Int64;
+        var h : record
+          version : array [0..3] of int32;
+          name : array[0..63] of Byte;
+          pointerSize : int32;
+          dataFormat  : int32;
+          offsetCount : int32;
+        end;
+        var k : integer;
+        var l : integer;
+        var s : integer;
+        var b : uint8;
+        var d : uint16;
+        var q : uint32;
+        var ps : uint32;
         var adr : TALrecord;
-        Read(fad, v); // First record is count of records, 0
-        var s : int64 := (FileSize(fad)-1) div 2;
-        WriteLN(#9#9+' Expected Count='+IntToStr(s));
-        SetLength(far[i], s);
+        fad.Read(s, sizeof(int32)); // First record is count of records or version if 2 or 5
+        if s = 2 then begin
+          k := sizeof(int32);
+          for j := 0 to 3 do fad.Read(h.version[j], k);  // Game version
+          fad.Read(l, k); // game name length
+          for j := 0 to Pred(l) do fad.Read(h.name[j], 1);  // name
+          fad.Read(ps, k); // Pointer size
+          fad.Read(v, k); // address count
+          vv := v;
+          k := 0;
+        end
+        else if s = 5 then begin
+          k := sizeof(h) + sizeof(int32);
+          Fad.ReadData(h);
+          vv := h.offsetCount;
+          k := (fad.Size - k) div sizeof(Int32);
+        end else begin
+          k := sizeof(int64);
+          FreeAndNil(fad);
+          fad := TFileStream.Create(t, fmOpenRead);
+          fad.Read(vv, sizeof(int64));
+          k := (fad.Size - k) div sizeof(Int64)*2;
+        end;
+        j := 0;
+
+        WriteLN(#9#9+' Expected Count='+IntToStr(k) + ' for ' + IntToStr(vv) + ' generation ' + IntToStr(s));
+        SetLength(far[i], vv);
+        adr.ID := 0;
+        var prevID     : uint64 := 0;
+        var prevOffset : uint64 := 0;
+        if s = 2 then try repeat
+          v := 0;
+          fad.Read(b, 1);
+          var lo : integer := b and 15;
+          var hi : integer := b shr 4;
+          case lo of
+            0: begin fad.Read(prevID, sizeof(uint64)); adr.ID := prevID; end;
+            1: adr.ID := prevID + 1;
+            2: begin fad.Read(b, 1); adr.ID := prevID + b; end;
+            3: begin fad.Read(b, 1); adr.ID := prevID - b; end;
+            4: begin fad.Read(d, 2); adr.ID := prevID + d; end;
+            5: begin fad.Read(d, 2); adr.ID := prevID - d; end;
+            6: begin fad.Read(d, sizeof(uint16)); adr.ID := d; end;
+            7: begin fad.Read(q, sizeof(uint32)); adr.ID := q; end;
+            else begin
+              WriteLN(#13#13+'  Error lo type is wrong b:' + IntToStr(b) + ' hi=' + IntToStr(hi) + ' lo=' + IntToStr(lo) + ' on line ' + IntToStr(j));
+              v := -1;
+              break;
+            end;
+          end;
+
+          var tmp : uint64 := prevOffset;
+          if (hi and 8) <> 0 then tmp := prevOffset div ps;
+          case hi and 7 of
+            0: begin fad.Read(tmp, sizeof(uint64)); adr.Offset := tmp; end;
+            1: adr.Offset := tmp + 1;
+            2: begin fad.Read(b, 1); adr.Offset := tmp + b; end;
+            3: begin fad.Read(b, 1); adr.Offset := tmp - b; end;
+            4: begin fad.Read(d, 2); adr.Offset := tmp + d; end;
+            5: begin fad.Read(d, 2); adr.Offset := tmp - d; end;
+            6: begin fad.Read(d, sizeof(uint16)); adr.Offset := d; end;
+            7: begin fad.Read(q, sizeof(uint32)); adr.Offset := q; end;
+            else begin
+              WriteLN(#13#13+'  Error hi type is wrong b:' + IntToStr(b) + ' hi=' + IntToStr(hi) + ' lo=' + IntToStr(lo) + ' on line ' + IntToStr(j));
+              v := -2;
+              break;
+            end;
+          end;
+          if v >= 0 then begin
+            if (hi and 8) <> 0 then adr.Offset := adr.Offset * ps;
+            prevID := adr.ID;
+            prevOffset := adr.Offset;
+            with far[i, j] do
+            begin
+              ID := adr.ID;
+              Offset := adr.offset;
+              Rel := baseModule + adr.offset;
+              IDC := MakeName('ID'+IntToStr(ID), ID, Offset, Rel, j, '');
+            end;
+          end;
+          if (j mod 1000)=0 then Write('.');
+          Inc(j);
+        until j >= vv except end else if s = 5 then
         repeat
-          Read(fad, adr.ID);
-          Read(fad, adr.Offset);
+          var offset : uint32 := 0;
+          fad.Read(Offset, sizeof(int32));
+          adr.Offset := Offset;
+          with far[i, j] do
+            if adr.Offset > 0 then
+              begin
+                ID := adr.ID;
+                Offset := adr.offset;
+                Rel := baseModule + adr.offset;
+                IDC := MakeName('ID'+IntToStr(ID), ID, Offset, Rel, j, '');
+              end
+            else
+              begin
+                ID := 0;
+                Offset := 0;
+                Rel := baseModule + 0;
+                IDC := MakeComment('ID'+IntToStr(adr.ID), j, adr.ID);
+              end;
+          if (j mod 1000)=0 then Write('.');
+          Inc(adr.ID);
+          Inc(j);
+        until j >= k else
+        repeat
+          fad.Read(adr.ID, sizeof(int64));
+          fad.Read(adr.Offset, sizeof(int64));
           with far[i, j] do
           begin
             ID := adr.ID;
@@ -281,14 +406,15 @@ begin
           end;
           if (j mod 1000)=0 then Write('.');
           Inc(j);
-        until Eof(fad);
-        CloseFile(fad);
+        until j >= k;
+        SetLength(far[i], j);
+        FreeAndNil(fad);
         WriteLN;
-        WriteLN(#9#9+'Count='+IntToStr(j));
+        WriteLN(#9#9+'Count='+IntToStr(j) + ' ' + IntToStr(j*16+sizeof(h)+4));
         WriteLN;
         Inc(i);
-      finally
-
+      except
+        WriteLN(#9#9+'Error reading data');
       end;
 
       try
@@ -340,7 +466,7 @@ begin
                         WriteLN(fi, epilogue);
                         Close(fi);
                         version := ExtractFileName(adVersions[i]);
-                        version := ChangeFileExt(version, '')+'-'+IntToStr(j);
+                        version := ChangeFileExt(version, '')+'_'+IntToStr(j);
                         version := ChangeFileExt(version, '.idc');
                         WriteLN(#9+Version);
                         WriteLN;
@@ -353,7 +479,7 @@ begin
                         var k : integer;
                         for k := 0 to Idents.Count - 1 do
                         begin
-                          if Int64(Idents.Objects[k])=far[i, j].ID then
+                          if (far[i,j].ID > 0) and (Int64(Idents.Objects[k])=far[i, j].ID) then
                           begin
                             IDCs.Add(MakeName(Idents[k], far[i, j].ID, far[i,j].Offset, far[i,j].Rel, j, #9+'ID:'+IntToStr(far[i,j].ID)));
                             Idents.Objects[k] := TObject(0);
@@ -371,8 +497,7 @@ begin
               except
               end;
           finally
-            if IsOpen(fcsv) then
-            begin
+            if  SourceVer = '*' then begin
               WriteLN(fcsv, epilogueCsv);
               Close(fcsv);
             end;
@@ -388,7 +513,7 @@ begin
                   HasNotFound := True;
                   IDCs.Add(#10+#13+'// ID not found!'+#10+#13+#10+#13);
                 end;
-                IDCs.Add(MakeComment(Idents[i], Int64(Idents.Objects[i])));
+                IDCs.Add(MakeComment(Idents[i], i, Int64(Idents.Objects[i])));
               end;
             IDCs.Insert(0, prologue);
             IDCs.Add(epilogue);
@@ -405,6 +530,6 @@ begin
     end;
   except
     on E: Exception do
-      Writeln(E.ClassName, ': ', E.Message);
+      Writeln(#13#13+E.ClassName, ': ', E.Message);
   end;
 end.
