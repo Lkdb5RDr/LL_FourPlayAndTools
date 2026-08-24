@@ -1,5 +1,5 @@
 #pragma once
-#define PLUGIN_VERSION 6
+#define PLUGIN_VERSION 62
 #define PLUGIN_VERSION_TEXT "62.0.0.0"
 
 #define PLUGIN_NAME "LL_fourPlay"
